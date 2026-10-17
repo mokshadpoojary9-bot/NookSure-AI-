@@ -1,0 +1,22 @@
+{
+  "name": "nooksure-ai",
+  "private": true,
+  "version": "0.1.0",
+  "description": "NookSure AI — home accessibility planning. Prepare thoughtfully. Reuse wisely.",
+  "workspaces": [
+    "shared",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev -w backend",
+    "dev:frontend": "npm run dev -w frontend",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "check": "npm run typecheck && npm run test && npm run build"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
