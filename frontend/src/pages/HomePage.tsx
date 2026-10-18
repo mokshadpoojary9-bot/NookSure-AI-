@@ -24,6 +24,9 @@ export function HomePage() {
           <a className="button primary" href={href("/plan")}>
             Start planning
           </a>
+          <a className="button" href={href("/assistant")}>
+            Ask the assistant
+          </a>
           <a className="button" href={href("/safety")}>
             Read our safety principles
           </a>

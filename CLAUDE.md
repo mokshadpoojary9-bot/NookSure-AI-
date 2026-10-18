@@ -18,10 +18,11 @@ Tagline: "Prepare thoughtfully. Reuse wisely."
 ## AI
 - AI calls happen server-side only, through the `AiProvider` adapter
   (`backend/src/ai/provider.ts`). No vendor SDK calls in routes or the frontend.
-- No API key configured → fixture provider.
+- Gemini via `@google/genai`; key is `GEMINI_API_KEY` (server-only). No key → fixture provider.
 
 ## Secrets & Git
-- Never commit `.env`, API keys, tokens, passwords, or Supabase service-role keys.
-  Only `VITE_*` publishable values may reach the browser.
+- Never commit `.env`, API keys, tokens, passwords, or Firebase service-account keys.
+  Only `VITE_*` publishable values (e.g. Firebase web config) may reach the browser.
+- Firebase is the only database/auth provider. Do not introduce Supabase or another.
 - Never force-push. Inspect the diff before committing. Preserve unrelated work.
 - Do not touch other projects (EvidenceLoop, SpeakIQ AI Coach).

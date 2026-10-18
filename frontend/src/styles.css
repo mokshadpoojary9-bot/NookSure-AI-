@@ -549,3 +549,145 @@ textarea {
     padding: 0;
   }
 }
+
+/* Account */
+.account {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+.account-note,
+.account-name {
+  color: var(--muted);
+}
+.account-error {
+  flex-basis: 100%;
+  margin: 0;
+  max-width: 340px;
+  color: var(--danger);
+}
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+.button.small {
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+}
+
+/* Assistant */
+.assistant {
+  max-width: 820px;
+}
+.chat {
+  padding: 16px;
+}
+.chat-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  max-height: min(60vh, 560px);
+  overflow-y: auto;
+}
+.chat-empty .chip {
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+}
+.bubble {
+  max-width: 88%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+}
+.bubble.user {
+  justify-self: end;
+  background: var(--accent-soft);
+}
+.bubble.assistant {
+  justify-self: start;
+  background: var(--bg);
+}
+.bubble.pending {
+  color: var(--muted);
+  font-style: italic;
+}
+.bubble-text {
+  margin: 0;
+  white-space: pre-line;
+}
+.bubble-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.link-button {
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  min-height: 32px;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.urgent {
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--warn-bg);
+  border-left: 3px solid var(--danger);
+}
+.chat-error {
+  color: var(--danger);
+  font-weight: 600;
+}
+.composer {
+  margin-top: 16px;
+  display: grid;
+  gap: 8px;
+}
+.composer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.composer-bar .count {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.button.mic {
+  gap: 6px;
+}
+.button.mic.live {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+.mic-status {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.tts-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.tts-bar .hint {
+  margin: 0;
+}

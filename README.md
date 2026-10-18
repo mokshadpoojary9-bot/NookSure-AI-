@@ -11,8 +11,15 @@ rearranging, or removing items already in the home before suggesting any purchas
 
 ## Status
 
-Foundation only — monorepo skeleton, a backend health endpoint, shared schemas, and
-a placeholder frontend. Product features are not implemented yet.
+| Feature | State |
+| ------- | ----- |
+| Landing, safety page, 4-step home planner (reuse → rearrange → remove → purchase) | Working. Plans come from a reviewed rule set, labeled "not AI analysis", saved in the browser only. |
+| NookSure assistant (`POST /api/chat`, Gemini via `@google/genai`) | Implemented and tested with mocks. **Not yet verified against the live Gemini API.** Without `GEMINI_API_KEY` it returns labeled sample replies. |
+| Voice input / read-aloud | Browser Web Speech API where supported; falls back to typing. Not available in every browser. |
+| Google sign-in (Firebase Auth) | Implemented, optional (guest mode works). **Not yet verified against the real Firebase project.** Signing in does not sync plans yet. |
+| Firestore plan storage | Planned |
+| Interactive 3D room view (Three.js / React Three Fiber) | Planned — not built |
+| Deployment (Vercel frontend, Render backend) | Planned |
 
 ## Stack
 
@@ -21,7 +28,8 @@ a placeholder frontend. Product features are not implemented yet.
 | Frontend  | React, Vite, TypeScript (Three.js / React Three Fiber planned) |
 | Backend   | Node.js, Express, TypeScript, Zod                             |
 | Shared    | Zod schemas and types (`@nooksure/shared`)                    |
-| Data      | Supabase (planned)                                            |
+| AI        | Gemini via `@google/genai` (server-side only)                 |
+| Auth/Data | Firebase Authentication (Google); Firestore planned            |
 | Tests     | Vitest, Testing Library, Supertest                            |
 
 ## Setup
@@ -35,8 +43,10 @@ npm run dev:backend    # http://localhost:3001/api/health
 npm run dev:frontend   # http://localhost:5173
 ```
 
-Without `AI_PROVIDER_API_KEY`, the backend runs in clearly labeled **fixture mode**:
-no real AI analysis is performed and results must be shown as sample data.
+Without `GEMINI_API_KEY`, the backend runs in clearly labeled **fixture mode**: no
+real AI analysis is performed and replies are shown as sample data. Without the
+`VITE_FIREBASE_*` values, the app runs in guest mode with sign-in disabled. See
+[`docs/setup.md`](docs/setup.md) for Gemini and Firebase setup.
 
 ## Checks
 

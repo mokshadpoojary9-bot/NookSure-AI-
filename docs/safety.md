@@ -20,6 +20,13 @@ therapist, physiotherapist, or qualified installer.
 Load-bearing or fall-protection needs → recommend a purpose-built product, correctly
 installed, and professional advice where appropriate.
 
+## Assistant
+- The system prompt (`backend/src/ai/prompt.ts`) restates these rules; keep them in sync.
+- The assistant cannot see the home and must not claim to have inspected it.
+- Messages describing an immediate hazard (gas, fire, sparking wires, a fall,
+  collapse) get a fixed "move away and contact emergency services" notice from a
+  deterministic check, independent of the model.
+
 ## Honesty
 - Never state or imply a home is "certified safe" or "fully accessible".
 - Every AI-derived result carries `analysisMode`. Fixture results must be visibly

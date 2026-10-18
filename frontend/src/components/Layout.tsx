@@ -1,16 +1,26 @@
 import type { ReactNode } from "react";
+import { AccountMenu } from "../auth/AccountMenu";
 import { href, type Route } from "../router";
 
 const NAV: { route: Route; label: string }[] = [
   { route: "/", label: "Home" },
   { route: "/plan", label: "Planner" },
+  { route: "/assistant", label: "Assistant" },
   { route: "/safety", label: "Safety" },
 ];
 
 export function Layout({ route, children }: { route: Route; children: ReactNode }) {
   return (
     <div className="shell">
-      <a className="skip-link" href="#main">
+      {/* Hash routing owns location.hash, so move focus instead of linking to #main. */}
+      <a
+        className="skip-link"
+        href="#main"
+        onClick={(e) => {
+          e.preventDefault();
+          document.getElementById("main")?.focus();
+        }}
+      >
         Skip to content
       </a>
       <header className="site-header">
@@ -27,6 +37,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
             </a>
           ))}
         </nav>
+        <AccountMenu />
       </header>
       <main id="main" tabIndex={-1}>
         {children}
