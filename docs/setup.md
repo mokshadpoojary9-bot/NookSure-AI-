@@ -39,6 +39,7 @@ placeholders only.
 | `GEMINI_TIMEOUT_MS`                 | backend  | no      | Optional. Default `20000` (20 s)         |
 | `CHAT_RATE_LIMIT_PER_MINUTE`        | backend  | no      | Optional. Per user IP; default `20`      |
 | `PORT`, `CORS_ORIGIN`               | backend  | no      | Defaults `3001`, `http://localhost:5173` |
+| `FRONTEND_ORIGIN`                   | backend  | no      | Production CORS allow-list (Vercel URL) |
 | `NODE_ENV`                          | backend  | no      | Leave unset locally; `production` on Render |
 | `VITE_API_BASE_URL`                 | frontend | no      | `http://localhost:3001` locally          |
 | `VITE_FIREBASE_API_KEY`             | frontend | no      | From Firebase config (step 3)            |
@@ -95,6 +96,8 @@ plan." Guests aren't affected: their plan stays in the browser only.
 
 ## 6. When you deploy (later)
 
+Full click-by-click steps: [`docs/deploy.md`](deploy.md). In short:
+
 - **Authorized domains:** Firebase Console → **Authentication** → **Settings** →
   **Authorized domains** → add each production domain (e.g. your Vercel domain).
   `localhost` is already there. Without this, sign-in fails with
@@ -104,7 +107,7 @@ plan." Guests aren't affected: their plan stays in the browser only.
   instead of everyone sharing the proxy's address. Locally this stays off, so a
   forged `X-Forwarded-For` header can't dodge the limit.
 - Set `GEMINI_API_KEY` in Render's environment settings, not in the frontend.
-  Set `CORS_ORIGIN` to the frontend's URL and `VITE_API_BASE_URL` to the backend's.
+  Set `FRONTEND_ORIGIN` (Render) to the frontend's URL and `VITE_API_BASE_URL` (Vercel) to the backend's.
 
 ## 7. Run locally
 

@@ -8,6 +8,9 @@ const EnvSchema = z.object({
   NODE_ENV: z.preprocess(unsetIfEmpty, z.string().default("development")),
   PORT: z.coerce.number().int().positive().default(3001),
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
+  // Comma-separated frontend origins allowed by CORS (e.g. the Vercel URL). In production
+  // these are the ONLY allowed origins; in development localhost is allowed as well.
+  FRONTEND_ORIGIN: z.preprocess(unsetIfEmpty, z.string().optional()),
   // Server-only secret. Never expose through a VITE_ variable.
   GEMINI_API_KEY: z.string().optional(),
   // Alias documented by the @google/genai SDK; override to pin a specific model.

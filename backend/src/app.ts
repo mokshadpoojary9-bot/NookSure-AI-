@@ -4,6 +4,7 @@ import type { HealthResponse } from "@nooksure/shared";
 import { createProvider } from "./ai";
 import type { AiProvider } from "./ai/provider";
 import type { AppConfig } from "./config";
+import { corsOptions } from "./cors";
 import { rateLimit } from "./rateLimit";
 import { chatRouter } from "./routes/chat";
 
@@ -18,7 +19,7 @@ export function createApp(config: AppConfig, deps: AppDeps = {}) {
   // In production (Render) we sit behind one proxy hop; trust it so req.ip is the
   // real client and rate limits are per user. Locally, X-Forwarded-For is ignored.
   if (config.NODE_ENV === "production") app.set("trust proxy", 1);
-  app.use(cors({ origin: config.CORS_ORIGIN }));
+  app.use(cors(corsOptions(config)));
   app.use(express.json({ limit: "64kb" }));
 
   app.get("/api/health", (_req, res) => {

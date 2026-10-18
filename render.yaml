@@ -1,0 +1,26 @@
+# Render Blueprint for the NookSure AI backend (Express API).
+# Values marked `sync: false` are entered in the Render dashboard — never put
+# real keys in this file. See docs/deploy.md.
+services:
+  - type: web
+    name: nooksure-backend
+    runtime: node
+    plan: free
+    # Install from the repo root so the npm workspaces (shared/, backend/) link up.
+    # --include=dev: the backend runs TypeScript via tsx, a devDependency, and
+    # NODE_ENV=production would otherwise skip devDependencies.
+    buildCommand: npm ci --include=dev
+    startCommand: npm run start -w backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        sync: false
+      - key: FRONTEND_ORIGIN
+        sync: false
+    # PORT is set by Render automatically; the backend reads it from the environment.
