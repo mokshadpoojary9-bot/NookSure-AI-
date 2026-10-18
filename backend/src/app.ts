@@ -15,6 +15,9 @@ export function createApp(config: AppConfig, deps: AppDeps = {}) {
   const provider = deps.provider ?? createProvider(config);
   const app = express();
   app.disable("x-powered-by");
+  // In production (Render) we sit behind one proxy hop; trust it so req.ip is the
+  // real client and rate limits are per user. Locally, X-Forwarded-For is ignored.
+  if (config.NODE_ENV === "production") app.set("trust proxy", 1);
   app.use(cors({ origin: config.CORS_ORIGIN }));
   app.use(express.json({ limit: "64kb" }));
 

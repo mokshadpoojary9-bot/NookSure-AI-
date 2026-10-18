@@ -37,10 +37,23 @@ describe("POST /api/chat", () => {
     expect(chat.mock.calls[0]?.[0].at(-1)).toEqual({ role: "user", content: "Hallway tips?" });
   });
 
+  it("never passes client-supplied identity fields to the provider", async () => {
+    const chat = vi.fn(async (_m: ChatMessage[]) => "ok");
+    const app = createApp(loadConfig({}), { provider: fakeProvider(chat) });
+    const res = await request(app)
+      .post("/api/chat")
+      .send({ uid: "attacker", email: "x@example.com", messages: [{ role: "user", content: "hi", uid: "attacker" }] });
+    expect(res.status).toBe(200);
+    expect(chat.mock.calls[0]?.[0]).toEqual([{ role: "user", content: "hi" }]);
+  });
+
   it.each([
     ["empty body", {}],
+    ["empty message", msg("")],
     ["blank message", msg("   ")],
     ["too long", msg("x".repeat(2001))],
+    ["non-string content", { messages: [{ role: "user", content: 123 }] }],
+    ["messages not an array", { messages: "hi" }],
     ["assistant last", { messages: [{ role: "assistant", content: "hi" }] }],
   ])("rejects invalid requests (%s)", async (_label, body) => {
     const chat = vi.fn();
@@ -71,6 +84,22 @@ describe("POST /api/chat", () => {
     expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain("SECRET");
   });
 
+  it("returns a safe 502 when the Gemini SDK fails, leaking no key, stack, or raw error", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    const raw = Object.assign(new Error("API key not valid: AIzaFAKE-planted-key-0000000000000000"), { status: 400 });
+    const client = { models: { generateContent: vi.fn(async () => Promise.reject(raw)) } } as unknown as GeminiClient;
+    const provider = new GeminiProvider({ apiKey: "AIzaFAKE-planted-key", model: "m", timeoutMs: 5000 }, client);
+    const app = createApp(loadConfig({}), { provider });
+
+    const res = await request(app).post("/api/chat").send(msg("hi"));
+    expect(res.status).toBe(502);
+    expect(res.body).toEqual({
+      error: { code: "provider_error", message: "The assistant is unavailable right now. Please try again shortly." },
+    });
+    const exposed = JSON.stringify(res.body) + res.text + JSON.stringify(log.mock.calls);
+    for (const leak of ["AIza", "planted", "API key not valid", "at ", ".ts:"]) expect(exposed).not.toContain(leak);
+  });
+
   it("maps provider timeouts to 504", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const app = createApp(loadConfig({}), {
@@ -96,6 +125,23 @@ describe("POST /api/chat", () => {
     const res = await request(app).post("/api/chat").send(msg("c"));
     expect(res.status).toBe(429);
     expect(res.headers["retry-after"]).toBeDefined();
+  });
+
+  it("locally, ignores X-Forwarded-For so it can't be spoofed to dodge the limit", async () => {
+    const app = createApp(loadConfig({ CHAT_RATE_LIMIT_PER_MINUTE: "1" }));
+    expect(app.get("trust proxy")).toBe(false);
+    await request(app).post("/api/chat").set("X-Forwarded-For", "1.1.1.1").send(msg("a"));
+    const res = await request(app).post("/api/chat").set("X-Forwarded-For", "2.2.2.2").send(msg("b"));
+    expect(res.status).toBe(429);
+  });
+
+  it("in production, trusts one proxy hop so each client gets its own limit", async () => {
+    const app = createApp(loadConfig({ NODE_ENV: "production", CHAT_RATE_LIMIT_PER_MINUTE: "1" }));
+    expect(app.get("trust proxy")).toBe(1);
+    const a1 = await request(app).post("/api/chat").set("X-Forwarded-For", "1.1.1.1").send(msg("a"));
+    const b1 = await request(app).post("/api/chat").set("X-Forwarded-For", "2.2.2.2").send(msg("b"));
+    const a2 = await request(app).post("/api/chat").set("X-Forwarded-For", "1.1.1.1").send(msg("c"));
+    expect([a1.status, b1.status, a2.status]).toEqual([200, 200, 429]);
   });
 });
 
@@ -140,6 +186,16 @@ describe("GeminiProvider", () => {
     expect(err).toBeInstanceOf(ProviderError);
     expect(err.status).toBe(429);
     expect(err.message).not.toContain("raw upstream text");
+  });
+
+  it("turns a timed-out request into ProviderTimeoutError", async () => {
+    const generateContent = vi.fn(
+      ({ config }: { config: { abortSignal: AbortSignal } }) =>
+        new Promise((_, reject) => config.abortSignal.addEventListener("abort", () => reject(new Error("aborted")))),
+    );
+    const client = { models: { generateContent } } as unknown as GeminiClient;
+    const provider = new GeminiProvider({ ...options, timeoutMs: 20 }, client);
+    await expect(provider.chat([{ role: "user", content: "hi" }])).rejects.toBeInstanceOf(ProviderTimeoutError);
   });
 
   it("treats an empty response as a provider error", async () => {

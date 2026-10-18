@@ -5,6 +5,7 @@ import type { AnalysisMode } from "@nooksure/shared";
 const unsetIfEmpty = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);
 
 const EnvSchema = z.object({
+  NODE_ENV: z.preprocess(unsetIfEmpty, z.string().default("development")),
   PORT: z.coerce.number().int().positive().default(3001),
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
   // Server-only secret. Never expose through a VITE_ variable.
