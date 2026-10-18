@@ -56,6 +56,10 @@ export function HomePage() {
             <li>Choose the rooms that matter most.</li>
             <li>Tick what you notice in each room — rugs, clutter, steps, lighting.</li>
             <li>Work through your checklist and mark items done as you go.</li>
+            <li>
+              Optionally explore each room in an interactive 3D view, with issues coloured by priority. It’s an
+              illustrative layout, not to scale — not a model of your actual home.
+            </li>
           </ol>
         </div>
         <div className="card note">
@@ -72,10 +76,6 @@ export function HomePage() {
       <section aria-labelledby="roadmap-heading">
         <h2 id="roadmap-heading">Coming next</h2>
         <ul className="roadmap">
-          <li>
-            <span className="badge">Planned</span> Interactive 3D room view (Three.js / React Three Fiber) — not built
-            yet.
-          </li>
           <li>
             <span className="badge">Planned</span> AI-assisted room analysis, always labeled live or sample.
           </li>

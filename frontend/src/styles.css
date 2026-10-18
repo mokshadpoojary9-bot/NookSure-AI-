@@ -764,3 +764,107 @@ textarea {
     display: none;
   }
 }
+
+/* 3D room view */
+.room3d {
+  margin: 20px 0 0;
+}
+.room3d-canvas {
+  height: clamp(280px, 55vw, 440px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  touch-action: none;
+  background: #eef1ee;
+}
+.room3d-label {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1f2a2e;
+  border: 2px solid currentColor;
+  font: 600 12px/1.4 system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+.room3d-label.status-high { border-color: #d64545; }
+.room3d-label.status-medium { border-color: #e0a030; }
+.room3d-label.status-done { border-color: #3a9a5b; }
+.room3d-note {
+  margin: 10px 0 6px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.room3d-legend,
+.room3d-issues {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 0.9rem;
+}
+.room3d .swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+.room3d-fallback {
+  padding: 16px;
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+@media print {
+  .room3d-canvas {
+    display: none;
+  }
+}
+.view-toggle {
+  margin: 16px 0 0;
+}
+.room3d-panel {
+  margin-top: 12px;
+}
+.room-picker .chip {
+  font: inherit;
+  color: var(--text);
+}
+.room-picker .chip[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+button.room3d-label {
+  cursor: pointer;
+  pointer-events: auto;
+}
+.room3d-label.selected {
+  background: #1f2a2e;
+  color: #ffffff;
+}
+.room3d-issue {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.room3d-issue[aria-pressed="true"] {
+  border-color: var(--text);
+  font-weight: 600;
+}
+.plan-item.selected {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}

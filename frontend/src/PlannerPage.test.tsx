@@ -28,9 +28,10 @@ describe("routing", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Home planner" })).toBeTruthy();
   });
 
-  it("does not present the 3D room view as built", () => {
+  it("describes the 3D room view as built and illustrative, not to scale", () => {
     render(<App />);
-    expect(screen.getByText(/Interactive 3D room view/).textContent).toMatch(/not built yet/);
+    expect(screen.getByText(/interactive 3D view/).textContent).toMatch(/illustrative layout, not to scale/);
+    expect(screen.queryByText(/not built yet/)).toBeNull();
   });
 });
 

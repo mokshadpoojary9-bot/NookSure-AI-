@@ -31,5 +31,7 @@ frontend (React/Vite) ──HTTP/JSON──▶ backend (Express) ──▶ AiPro
   Access is enforced by `firestore.rules` (owner-only, title ≤ 120 chars, fixed fields).
 - **frontend/** — hash-routed pages: home, planner, saved plans (signed-in), assistant, safety. Voice input
   and read-aloud use the browser Web Speech API; recognized text is placed in the
-  input for review and sent to the same `/api/chat` endpoint. An interactive 3D room
-  view (Three.js / React Three Fiber) is planned.
+  input for review and sent to the same `/api/chat` endpoint. The interactive 3D room
+  view (`components/room3d/`, Three.js / React Three Fiber) is lazy-loaded from the
+  plan step. `sceneModel.ts` turns the plan into a fixed, illustrative (not-to-scale)
+  layout per room type — pure and unit-tested; `RoomView3D.tsx` only renders it.

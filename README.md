@@ -18,14 +18,14 @@ rearranging, or removing items already in the home before suggesting any purchas
 | Voice input / read-aloud | Browser Web Speech API where supported; falls back to typing. Not yet tested in a real browser. |
 | Google sign-in (Firebase Auth) | Implemented, optional (guest mode works). Firebase config verified; **a real sign-in has not been tested yet** — the Google provider must be enabled first. |
 | Saved plans (Firestore) | Implemented for signed-in users: Save plan, My saved plans (open, delete). Tested with a mocked Firestore; **not yet tested against the real database**, and the rules below must be published first. Guests keep browser-only storage. |
-| Interactive 3D room view (Three.js / React Three Fiber) | Planned — not built |
+| Interactive 3D room view (Three.js / React Three Fiber) | Built: "Show 3D view" on the plan step, room picker, issues coloured by priority (red high, amber medium, green done), click to find the checklist item. **Illustrative layout, not to scale.** Lazy-loaded; falls back to the checklist when WebGL isn't available. Tested without WebGL; not yet checked in a real browser. |
 | Deployment (Vercel frontend, Render backend) | Planned |
 
 ## Stack
 
 | Area      | Tech                                                          |
 | --------- | ------------------------------------------------------------- |
-| Frontend  | React, Vite, TypeScript (Three.js / React Three Fiber planned) |
+| Frontend  | React, Vite, TypeScript, Three.js / React Three Fiber (3D view) |
 | Backend   | Node.js, Express, TypeScript, Zod                             |
 | Shared    | Zod schemas and types (`@nooksure/shared`)                    |
 | AI        | Gemini via `@google/genai` (server-side only)                 |

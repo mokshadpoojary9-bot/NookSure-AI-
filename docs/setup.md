@@ -128,6 +128,7 @@ means Gemini is configured; `"fixture"` means demo mode.
 | Feature        | What to do |
 | -------------- | ---------- |
 | Google sign-in | Click **Sign in with Google** (top right) → pick your account. The header shows "Signed in as …" and **Sign out**. |
+| 3D view        | On the plan step click **Show 3D view** → pick a room → drag to rotate, scroll or pinch to zoom. Click a coloured object or label to highlight its checklist items. Illustrative layout, not to scale. |
 | Saved plans    | Signed in, finish a plan in **Planner** → name it → **Save plan** ("Saved to your account ✓"). Open **My saved plans** → **Open** reloads it; **Delete** asks you to confirm. |
 | Chat           | Click **Assistant** → type a question (or click a suggestion) → **Send** or Enter. Live replies show "Gemini AI · guidance only"; demo replies show "Sample reply". |
 | Mic            | Click **🎤 Speak** → click **Allow** when Chrome asks for the microphone → speak. Your words appear in the text box; edit if needed, then **Send**. |

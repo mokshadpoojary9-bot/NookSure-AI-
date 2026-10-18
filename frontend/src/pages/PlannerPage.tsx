@@ -15,6 +15,7 @@ import {
   type RoomType,
 } from "@nooksure/shared";
 import { SavePlanPanel } from "../components/SavePlanPanel";
+import { LazyRoomView3D } from "../components/room3d/LazyRoomView3D";
 import { clearState, emptyState, loadState, saveState, type PlannerState } from "../storage";
 
 const STEPS = ["Household", "Rooms", "Observations", "Your plan"] as const;
@@ -76,6 +77,7 @@ export function PlannerPage() {
         {step === 3 && (
           <PlanStep
             plan={plan}
+            profile={profile}
             done={done}
             onToggleDone={(id) => setState((s) => ({ ...s, done: toggle(s.done, id) }))}
           />
@@ -211,8 +213,55 @@ function ObservationsStep({ profile, setProfile }: StepProps) {
   );
 }
 
-function PlanStep({ plan, done, onToggleDone }: { plan: PlanItem[]; done: string[]; onToggleDone: (id: string) => void }) {
+interface Selection {
+  room: RoomType;
+  concern: Concern;
+}
+
+const reducedMotion = () =>
+  typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function PlanStep({
+  plan,
+  profile,
+  done,
+  onToggleDone,
+}: {
+  plan: PlanItem[];
+  profile: HomeProfile;
+  done: string[];
+  onToggleDone: (id: string) => void;
+}) {
   const completed = plan.filter((i) => done.includes(i.id)).length;
+  const [show3D, setShow3D] = useState(false);
+  const [roomChoice, setRoomChoice] = useState<RoomType | null>(null);
+  const [selected, setSelected] = useState<Selection | null>(null);
+
+  const rooms = profile.rooms;
+  // Default to the first room that has something to show.
+  const firstWithItems = rooms.find((r) => plan.some((i) => i.room === r)) ?? rooms[0];
+  const room = roomChoice && rooms.includes(roomChoice) ? roomChoice : firstWithItems;
+
+  const isSelected = (item: PlanItem) => selected?.room === item.room && selected.concern === item.concern;
+  const selectedCount = plan.filter(isSelected).length;
+
+  // 3D → list: highlight and scroll to the matching checklist items.
+  const selectFrom3D = (concern: Concern) => {
+    if (!room) return;
+    setSelected({ room, concern });
+    const first = plan.find((i) => i.room === room && i.concern === concern);
+    if (first) {
+      document.getElementById(planItemDomId(first.id))?.scrollIntoView?.({
+        behavior: reducedMotion() ? "auto" : "smooth",
+        block: "center",
+      });
+    }
+  };
+  // List → 3D: select the item's issue and show its room.
+  const selectFromList = (item: PlanItem) => {
+    setSelected({ room: item.room, concern: item.concern });
+    setRoomChoice(item.room);
+  };
 
   return (
     <>
@@ -228,6 +277,48 @@ function PlanStep({ plan, done, onToggleDone }: { plan: PlanItem[]; done: string
         </p>
       ) : (
         <>
+          <div className="view-toggle">
+            <button
+              type="button"
+              className="button"
+              aria-expanded={show3D}
+              aria-controls="room3d-panel"
+              onClick={() => setShow3D((v) => !v)}
+            >
+              {show3D ? "Hide 3D view" : "Show 3D view"}
+            </button>
+          </div>
+          {show3D && room && (
+            <div id="room3d-panel" className="room3d-panel">
+              {rooms.length > 1 && (
+                <div className="chips room-picker" role="group" aria-label="Room to show in 3D">
+                  {rooms.map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      className="chip"
+                      aria-pressed={r === room}
+                      onClick={() => setRoomChoice(r)}
+                    >
+                      {ROOM_LABELS[r]}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <LazyRoomView3D
+                room={room}
+                profile={profile}
+                done={done}
+                selected={selected?.room === room ? selected.concern : null}
+                onSelect={selectFrom3D}
+              />
+              <p className="visually-hidden" aria-live="polite">
+                {selected && selectedCount > 0
+                  ? `${CONCERNS[selected.concern].label} in the ${ROOM_LABELS[selected.room].toLowerCase()}: ${selectedCount} checklist ${selectedCount === 1 ? "item" : "items"} highlighted.`
+                  : ""}
+              </p>
+            </div>
+          )}
           <div className="progress" aria-live="polite">
             <span>
               {completed} of {plan.length} done
@@ -249,6 +340,8 @@ function PlanStep({ plan, done, onToggleDone }: { plan: PlanItem[]; done: string
                       key={item.id}
                       item={item}
                       done={done.includes(item.id)}
+                      selected={isSelected(item)}
+                      onSelect={() => selectFromList(item)}
                       onToggle={() => onToggleDone(item.id)}
                     />
                   ))}
@@ -262,9 +355,29 @@ function PlanStep({ plan, done, onToggleDone }: { plan: PlanItem[]; done: string
   );
 }
 
-function PlanItemCard({ item, done, onToggle }: { item: PlanItem; done: boolean; onToggle: () => void }) {
+const planItemDomId = (id: string) => `plan-item-${id.replace(/[^a-z0-9_-]/gi, "-")}`;
+
+function PlanItemCard({
+  item,
+  done,
+  selected,
+  onSelect,
+  onToggle,
+}: {
+  item: PlanItem;
+  done: boolean;
+  selected: boolean;
+  onSelect: () => void;
+  onToggle: () => void;
+}) {
   return (
-    <li className={`plan-item${done ? " done" : ""}`}>
+    // Clicking anywhere on the card (including the checkbox) also selects its issue in the 3D view.
+    <li
+      id={planItemDomId(item.id)}
+      className={`plan-item${done ? " done" : ""}${selected ? " selected" : ""}`}
+      data-selected={selected || undefined}
+      onClick={onSelect}
+    >
       <label className="plan-check">
         <input type="checkbox" checked={done} onChange={onToggle} />
         <span className="visually-hidden">Mark done: </span>
