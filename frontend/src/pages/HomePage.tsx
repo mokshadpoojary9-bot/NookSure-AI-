@@ -65,7 +65,7 @@ export function HomePage() {
             grab bars or ramps: anything that bears weight or prevents falls points to a purpose-built product and
             professional advice.
           </p>
-          <p>Your plan is saved in this browser only.</p>
+          <p>Your plan is saved in this browser. Sign in with Google to also save it to your account.</p>
         </div>
       </section>
 
@@ -78,9 +78,6 @@ export function HomePage() {
           </li>
           <li>
             <span className="badge">Planned</span> AI-assisted room analysis, always labeled live or sample.
-          </li>
-          <li>
-            <span className="badge">Planned</span> Saved plans across devices with Firebase.
           </li>
         </ul>
       </section>

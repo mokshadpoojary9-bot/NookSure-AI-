@@ -14,6 +14,7 @@ import {
   type PlanItem,
   type RoomType,
 } from "@nooksure/shared";
+import { SavePlanPanel } from "../components/SavePlanPanel";
 import { clearState, emptyState, loadState, saveState, type PlannerState } from "../storage";
 
 const STEPS = ["Household", "Rooms", "Observations", "Your plan"] as const;
@@ -77,6 +78,16 @@ export function PlannerPage() {
             plan={plan}
             done={done}
             onToggleDone={(id) => setState((s) => ({ ...s, done: toggle(s.done, id) }))}
+          />
+        )}
+        {step === 3 && (
+          <SavePlanPanel
+            title={state.title ?? "My home plan"}
+            profile={profile}
+            done={done}
+            saved={state.saved}
+            onTitleChange={(title) => setState((s) => ({ ...s, title }))}
+            onSaved={(saved) => setState((s) => ({ ...s, saved }))}
           />
         )}
 

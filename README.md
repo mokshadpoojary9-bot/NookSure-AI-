@@ -16,8 +16,8 @@ rearranging, or removing items already in the home before suggesting any purchas
 | Landing, safety page, 4-step home planner (reuse → rearrange → remove → purchase) | Working. Plans come from a reviewed rule set, labeled "not AI analysis", saved in the browser only. |
 | NookSure assistant (`POST /api/chat`, Gemini via `@google/genai`) | Working. One live Gemini reply verified locally on 2026-10-18; automated tests use a mocked Gemini. Without `GEMINI_API_KEY` it runs in labeled demo (sample) mode. |
 | Voice input / read-aloud | Browser Web Speech API where supported; falls back to typing. Not yet tested in a real browser. |
-| Google sign-in (Firebase Auth) | Implemented, optional (guest mode works). Firebase config verified; **a real sign-in has not been tested yet** — the Google provider must be enabled first. Signing in does not sync plans yet. |
-| Firestore plan storage | Planned |
+| Google sign-in (Firebase Auth) | Implemented, optional (guest mode works). Firebase config verified; **a real sign-in has not been tested yet** — the Google provider must be enabled first. |
+| Saved plans (Firestore) | Implemented for signed-in users: Save plan, My saved plans (open, delete). Tested with a mocked Firestore; **not yet tested against the real database**, and the rules below must be published first. Guests keep browser-only storage. |
 | Interactive 3D room view (Three.js / React Three Fiber) | Planned — not built |
 | Deployment (Vercel frontend, Render backend) | Planned |
 
@@ -29,7 +29,7 @@ rearranging, or removing items already in the home before suggesting any purchas
 | Backend   | Node.js, Express, TypeScript, Zod                             |
 | Shared    | Zod schemas and types (`@nooksure/shared`)                    |
 | AI        | Gemini via `@google/genai` (server-side only)                 |
-| Auth/Data | Firebase Authentication (Google); Firestore planned            |
+| Auth/Data | Firebase Authentication (Google) and Firestore (saved plans)   |
 | Tests     | Vitest, Testing Library, Supertest                            |
 
 ## Quick start
@@ -50,6 +50,15 @@ npm run dev:frontend          # terminal 2 → open http://localhost:5173/
 The app works with an empty `.env`: without `GEMINI_API_KEY` the assistant runs in
 clearly labeled **demo mode** (sample replies, `analysisMode: "fixture"`), and
 without the `VITE_FIREBASE_*` values the app runs in guest mode with sign-in off.
+
+## Firestore rules
+
+Saved plans live at `users/{uid}/plans/{planId}` — each user's plans sit under their
+own Firebase user id, and only that signed-in user can read or write them.
+
+Before saving plans works, publish the rules once: Firebase Console → **Firestore
+Database** → **Rules** tab → paste the content of [`firestore.rules`](firestore.rules)
+→ **Publish**. (Create the Firestore database first if the project has none.)
 
 ## Checks
 

@@ -4,7 +4,7 @@
 frontend (React/Vite) ──HTTP/JSON──▶ backend (Express) ──▶ AiProvider adapter ──▶ GeminiProvider (@google/genai)
    │    │                                  │                    └─▶ FixtureProvider (no GEMINI_API_KEY)
    │    └──── @nooksure/shared (Zod schemas + types) ───────┘
-   └──▶ Firebase Auth (Google sign-in, browser SDK)          Firestore (planned)
+   └──▶ Firebase Auth (Google sign-in) + Firestore (users/{uid}/plans), browser SDK
 ```
 
 - **shared/** — single source of truth for request/response shapes. Backend validates
@@ -26,7 +26,10 @@ frontend (React/Vite) ──HTTP/JSON──▶ backend (Express) ──▶ AiPro
   backend does not use identity yet. When a route starts relying on the user, it
   must verify Firebase ID tokens server-side with the Admin SDK — never trust a
   client-sent uid.
-- **frontend/** — hash-routed pages: home, planner, assistant, safety. Voice input
+- **Saved plans** — `frontend/src/lib/plans.ts` reads/writes `users/{uid}/plans/{planId}`
+  directly from the browser; the uid comes from the signed-in user, never a field.
+  Access is enforced by `firestore.rules` (owner-only, title ≤ 120 chars, fixed fields).
+- **frontend/** — hash-routed pages: home, planner, saved plans (signed-in), assistant, safety. Voice input
   and read-aloud use the browser Web Speech API; recognized text is placed in the
   input for review and sent to the same `/api/chat` endpoint. An interactive 3D room
   view (Three.js / React Three Fiber) is planned.

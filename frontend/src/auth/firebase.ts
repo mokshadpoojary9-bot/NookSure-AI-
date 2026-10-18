@@ -1,5 +1,6 @@
 import type { FirebaseApp, FirebaseOptions } from "firebase/app";
 import type { Auth } from "firebase/auth";
+import type { Firestore } from "firebase/firestore";
 
 /**
  * Firebase web config for project `nooksure-ai`, read from local Vite env vars
@@ -22,17 +23,27 @@ export const isFirebaseConfigured = Boolean(
   firebaseConfig.apiKey && firebaseConfig.authDomain && firebaseConfig.projectId && firebaseConfig.appId,
 );
 
+let appPromise: Promise<FirebaseApp> | undefined;
 let authPromise: Promise<Auth> | undefined;
+let dbPromise: Promise<Firestore> | undefined;
 
-/** Lazily loads and initializes Firebase exactly once (safe under StrictMode/HMR). */
+/** Lazily loads and initializes the Firebase app exactly once (safe under StrictMode/HMR). */
+function getFirebaseApp(): Promise<FirebaseApp> {
+  appPromise ??= import("firebase/app").then(({ getApp, getApps, initializeApp }) =>
+    getApps().length ? getApp() : initializeApp(firebaseConfig),
+  );
+  return appPromise;
+}
+
 export function getFirebaseAuth(): Promise<Auth> {
-  authPromise ??= (async () => {
-    const [{ getApp, getApps, initializeApp }, { getAuth }] = await Promise.all([
-      import("firebase/app"),
-      import("firebase/auth"),
-    ]);
-    const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-    return getAuth(app);
-  })();
+  authPromise ??= Promise.all([getFirebaseApp(), import("firebase/auth")]).then(([app, { getAuth }]) => getAuth(app));
   return authPromise;
+}
+
+/** Firestore on the same app instance as Auth, so security rules see the signed-in user. */
+export function getFirebaseDb(): Promise<Firestore> {
+  dbPromise ??= Promise.all([getFirebaseApp(), import("firebase/firestore")]).then(([app, { getFirestore }]) =>
+    getFirestore(app),
+  );
+  return dbPromise;
 }

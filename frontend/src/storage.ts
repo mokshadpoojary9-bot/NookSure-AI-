@@ -2,13 +2,17 @@ import { z } from "zod";
 import { HomeProfileSchema } from "@nooksure/shared";
 
 /**
- * Planner draft saved in this browser only. Firebase-backed persistence is a
- * later milestone; until then nothing leaves the device.
+ * Planner draft saved in this browser. Signed-in users can additionally save
+ * plans to their account (see lib/plans.ts); guests' data never leaves the device.
  */
 export const PlannerStateSchema = z.object({
   step: z.number().int().min(0).max(3),
   profile: HomeProfileSchema,
   done: z.array(z.string()),
+  /** Name used when saving to the account. */
+  title: z.string().max(120).optional(),
+  /** The Firestore plan this draft was saved as / opened from, and whose it is. */
+  saved: z.object({ id: z.string(), uid: z.string() }).optional(),
 });
 export type PlannerState = z.infer<typeof PlannerStateSchema>;
 

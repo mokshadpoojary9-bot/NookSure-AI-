@@ -1,15 +1,18 @@
 import type { ReactNode } from "react";
 import { AccountMenu } from "../auth/AccountMenu";
+import { useAuth } from "../auth/AuthContext";
 import { href, type Route } from "../router";
 
-const NAV: { route: Route; label: string }[] = [
+const NAV: { route: Route; label: string; signedInOnly?: boolean }[] = [
   { route: "/", label: "Home" },
   { route: "/plan", label: "Planner" },
+  { route: "/saved", label: "My saved plans", signedInOnly: true },
   { route: "/assistant", label: "Assistant" },
   { route: "/safety", label: "Safety" },
 ];
 
 export function Layout({ route, children }: { route: Route; children: ReactNode }) {
+  const signedIn = useAuth().status === "signed-in";
   return (
     <div className="shell">
       {/* Hash routing owns location.hash, so move focus instead of linking to #main. */}
@@ -31,7 +34,7 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
           NookSure&nbsp;AI
         </a>
         <nav aria-label="Main">
-          {NAV.map((n) => (
+          {NAV.filter((n) => signedIn || !n.signedInOnly).map((n) => (
             <a key={n.route} href={href(n.route)} aria-current={route === n.route ? "page" : undefined}>
               {n.label}
             </a>

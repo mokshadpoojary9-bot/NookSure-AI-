@@ -79,6 +79,20 @@ In the Firebase Console: **Authentication** → **Sign-in method** → **Google*
 Until this is done, clicking "Sign in with Google" shows "Google sign-in isn't
 enabled for this Firebase project yet."
 
+## 5b. Firestore (saved plans)
+
+Signed-in users can save plans. Each plan is stored at `users/{uid}/plans/{planId}`
+— under the signed-in user's own id, readable and writable only by them.
+
+1. Firebase Console → **Firestore Database**. If there's no database yet, click
+   **Create database**, pick a location, and start in **production mode**.
+2. Open the **Rules** tab.
+3. Replace everything there with the content of `firestore.rules` from this repo.
+4. Click **Publish**.
+
+Without published rules, saving shows "You don't have permission to access this
+plan." Guests aren't affected: their plan stays in the browser only.
+
 ## 6. When you deploy (later)
 
 - **Authorized domains:** Firebase Console → **Authentication** → **Settings** →
@@ -114,6 +128,7 @@ means Gemini is configured; `"fixture"` means demo mode.
 | Feature        | What to do |
 | -------------- | ---------- |
 | Google sign-in | Click **Sign in with Google** (top right) → pick your account. The header shows "Signed in as …" and **Sign out**. |
+| Saved plans    | Signed in, finish a plan in **Planner** → name it → **Save plan** ("Saved to your account ✓"). Open **My saved plans** → **Open** reloads it; **Delete** asks you to confirm. |
 | Chat           | Click **Assistant** → type a question (or click a suggestion) → **Send** or Enter. Live replies show "Gemini AI · guidance only"; demo replies show "Sample reply". |
 | Mic            | Click **🎤 Speak** → click **Allow** when Chrome asks for the microphone → speak. Your words appear in the text box; edit if needed, then **Send**. |
 | Read-aloud     | Click **Read aloud** under a reply; **Stop reading** to stop. Or tick **Read replies aloud automatically** and use **Stop speaking**. |
