@@ -15,6 +15,11 @@ const chooseHome = (type: RegExp = /^1BHK/) => {
   fireEvent.click(screen.getByRole("radio", { name: type }));
   click("Continue");
 };
+/** "Furniture" step is optional: continue without ticking anything. */
+const skipFurniture = () => {
+  expect(screen.getByRole("heading", { name: "What furniture do you already have?" })).toBeTruthy();
+  click("Continue");
+};
 
 beforeEach(() => {
   window.scrollTo = () => {}; // not implemented in jsdom
@@ -54,6 +59,7 @@ describe("planner workflow", () => {
     check("Bathroom");
     check("Living room");
     click("Continue");
+    skipFurniture();
 
     const bathroom = within(screen.getByRole("group", { name: "Bathroom" }));
     fireEvent.click(bathroom.getByRole("checkbox", { name: /No grab bar/ }));
@@ -85,6 +91,7 @@ describe("planner workflow", () => {
     chooseHome();
     check("Kitchen");
     click("Continue");
+    skipFurniture();
     click("Build my plan");
     expect(screen.getByText(/nothing to plan yet/)).toBeTruthy();
   });
@@ -105,6 +112,7 @@ describe("planner workflow", () => {
     chooseHome();
     check("Bedroom");
     click("Continue");
+    skipFurniture();
     click("Build my plan");
     click("Start over");
     expect(screen.getByRole("heading", { name: "Who are you preparing the home for?" })).toBeTruthy();
@@ -156,9 +164,11 @@ describe("planner workflow", () => {
     check("Entrance");
     check("Bedroom");
     click("Continue");
+    skipFurniture();
     fireEvent.click(within(screen.getByRole("group", { name: "Entrance" })).getByRole("checkbox", { name: /Step or raised threshold/ }));
 
-    // Back to "Your home": the door opens into the living room after all.
+    // Back to "Your home" (Observations → Furniture → Rooms → Your home): the door opens into the living room after all.
+    click("Back");
     click("Back");
     click("Back");
     fireEvent.click(
@@ -168,6 +178,7 @@ describe("planner workflow", () => {
     expect((screen.getByRole("checkbox", { name: "Living room + entrance" }) as HTMLInputElement).checked).toBe(true);
     expect((screen.getByRole("checkbox", { name: "Bedroom" }) as HTMLInputElement).checked).toBe(true);
     click("Continue");
+    skipFurniture();
     const living = within(screen.getByRole("group", { name: "Living room + entrance" }));
     expect((living.getByRole("checkbox", { name: /Step or raised threshold/ }) as HTMLInputElement).checked).toBe(true);
   });
@@ -182,8 +193,39 @@ describe("planner workflow", () => {
     expect(screen.getByRole("heading", { name: "What do you notice in each room?" })).toBeTruthy();
     click("Back");
     click("Back");
+    click("Back");
     expect((screen.getByRole("radio", { name: /^Custom/ }) as HTMLInputElement).checked).toBe(true);
     expect((screen.getByRole("checkbox", { name: "Kitchen" }) as HTMLInputElement).checked).toBe(true);
+  });
+
+  it("Furniture: ticked items make the plan reuse what's there; rooms can be skipped", () => {
+    render(<App />);
+    navigate("#/plan");
+    click("Continue");
+    chooseHome();
+    check("Living room");
+    check("Bathroom");
+    click("Continue");
+
+    const living = within(screen.getByRole("group", { name: "Living room" }));
+    fireEvent.click(living.getByRole("checkbox", { name: /Floor lamp/ }));
+    fireEvent.change(living.getByRole("textbox", { name: /Other/ }), { target: { value: "recliner" } });
+    const bathroom = within(screen.getByRole("group", { name: "Bathroom" }));
+    fireEvent.click(bathroom.getByRole("checkbox", { name: "Skip this room" }));
+    expect((bathroom.getByRole("checkbox", { name: /Stool/ }) as HTMLInputElement).disabled).toBe(true);
+    click("Continue");
+
+    fireEvent.click(within(screen.getByRole("group", { name: "Living room" })).getByRole("checkbox", { name: /Dim lighting/ }));
+    click("Build my plan");
+    expect(screen.getByText("Move your floor lamp to light the route")).toBeTruthy();
+    expect(screen.queryByText("Move existing lamps onto the route")).toBeNull(); // replaced by advice about their own lamp
+
+    // Answers are kept when going back.
+    click("Back");
+    click("Back");
+    const again = within(screen.getByRole("group", { name: "Living room" }));
+    expect((again.getByRole("checkbox", { name: /Floor lamp/ }) as HTMLInputElement).checked).toBe(true);
+    expect((again.getByRole("textbox", { name: /Other/ }) as HTMLInputElement).value).toBe("recliner");
   });
 
   it("ignores a corrupted saved draft", () => {

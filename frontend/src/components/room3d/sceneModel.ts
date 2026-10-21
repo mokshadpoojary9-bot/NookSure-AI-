@@ -3,12 +3,14 @@ import {
   generatePlan,
   spaceOf,
   type Concern,
+  type FurnitureItem,
   type HomeProfile,
   type RoomId,
   type RoomSpace,
   type RoomType,
 } from "@nooksure/shared";
 import manifest from "./models.manifest.json";
+import { furnitureBoxes } from "./furnitureLayout";
 
 /**
  * Pure description of the illustrative 3D room — no three.js here, so it can be
@@ -32,6 +34,10 @@ export interface Box {
   model?: ModelId;
   /** Model turn about the vertical axis, radians (models face +z by default). */
   rotationY?: number;
+  /** The user's furniture item this box shows (furniture-driven layouts only). */
+  item?: FurnitureItem;
+  /** How it is supported: on the floor, on top of another piece, on a wall, or flat (rugs/mats). */
+  support?: "floor" | "top" | "wall" | "flat";
 }
 
 /** Verified web-ready furniture models in /public/models. */
@@ -109,7 +115,34 @@ export interface RoomScene {
   wallHeight: number;
   furniture: Box[];
   issues: IssueMarker[];
+  /** In-scene labels (also listed as text for screen readers). */
+  labels: SceneLabel[];
+  /** True when the furniture comes from the user's answers rather than the default layout. */
+  fromAnswers: boolean;
 }
+
+export interface SceneLabel {
+  id: string;
+  kind: "issue" | "furniture";
+  text: string;
+  at: Vec3;
+  /** Selecting the label highlights this concern's checklist items. */
+  concern: Concern;
+  status: IssueStatus;
+}
+
+/** What to do, shown at the spot in the 3D view (kept in step with the plan's suggestions). */
+export const SCENE_TEXT: Record<Concern, string> = {
+  loose_rugs: "Loose rug: roll it up and store it",
+  clutter: "Clutter: keep this path clear",
+  narrow_path: "Narrow path: keep this path clear",
+  trailing_cables: "Trailing cable: run it along the wall",
+  poor_lighting: "Dim lighting: add a night light here",
+  out_of_reach: "Out of reach: move daily items lower",
+  entry_step: "Step at door: purpose-built ramp (get advice)",
+  no_support_rail: "Grab bar zone (install by a professional)",
+  slippery_floor: "Slippery floor: add a non-slip mat here",
+};
 
 export const ROOM_W = 6;
 export const ROOM_D = 5;
@@ -370,6 +403,47 @@ export function buildRoomScene(room: RoomId, profile: HomeProfile, done: readonl
     return { concern, label: CONCERN_SHORT[concern], status, boxes, labelAt };
   });
 
-  const furniture = [...FURNITURE[space.type], ...space.merged.flatMap((t) => MERGED_EXTRAS[t] ?? [])];
-  return { room, type: space.type, label: space.label, width: ROOM_W, depth: ROOM_D, wallHeight: WALL_H, furniture, issues };
+  // The user's own furniture when they told us; otherwise the default illustrative layout.
+  const own = profile.furniture?.[room];
+  const fromAnswers = own && !own.skipped && own.items.length > 0 ? furnitureBoxes(space.type, own.items) : null;
+  const furniture: Box[] = fromAnswers ?? [...FURNITURE[space.type], ...space.merged.flatMap((t) => MERGED_EXTRAS[t] ?? [])];
+
+  const labels: SceneLabel[] = issues.map((i) => ({
+    id: `issue:${i.concern}`,
+    kind: "issue",
+    text: i.status === "done" ? `✓ Done — ${SCENE_TEXT[i.concern]}` : SCENE_TEXT[i.concern],
+    at: i.labelAt,
+    concern: i.concern,
+    status: i.status,
+  }));
+  // One label per piece of the user's furniture that has advice in the plan, placed above it.
+  const labelled = new Set<string>();
+  for (const it of items) {
+    if (it.room !== room || !it.furniture || labelled.has(it.furniture)) continue;
+    const issue = issues.find((i) => i.concern === it.concern);
+    const box = furniture.find((b) => b.item === it.furniture && b.support !== "top");
+    if (!issue || !box) continue;
+    labelled.add(it.furniture);
+    labels.push({
+      id: `furniture:${it.furniture}`,
+      kind: "furniture",
+      text: doneSet.has(it.id) ? `✓ Done — ${it.title}` : it.title,
+      at: [box.position[0], Math.min(box.position[1] + box.size[1] / 2 + 0.3, WALL_H - 0.1), box.position[2]],
+      concern: it.concern,
+      status: doneSet.has(it.id) ? "done" : issue.status,
+    });
+  }
+
+  return {
+    room,
+    type: space.type,
+    label: space.label,
+    width: ROOM_W,
+    depth: ROOM_D,
+    wallHeight: WALL_H,
+    furniture,
+    issues,
+    labels,
+    fromAnswers: fromAnswers !== null,
+  };
 }

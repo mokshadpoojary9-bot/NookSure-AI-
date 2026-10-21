@@ -1216,3 +1216,84 @@ textarea:focus {
 .credits-list li + li {
   margin-top: 8px;
 }
+
+/* Furniture step */
+.furniture-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+}
+.furniture-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  cursor: pointer;
+}
+.furniture-chip:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.furniture-chip:has(input:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+.furniture-chip:has(input:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.furniture-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.furniture-other {
+  margin-top: 12px;
+}
+.furniture-other input {
+  font: inherit;
+  font-weight: 400;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+.furniture-skip {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+/* 3D labels (Phase 2) */
+.room3d-toolbar {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 8px;
+}
+.room3d-label {
+  max-width: 220px;
+  white-space: normal;
+  text-align: left;
+}
+.room3d-label.kind-furniture {
+  font-weight: 500;
+  background: rgb(255 255 255 / 0.92);
+  box-shadow:
+    0 0 0 1.5px #4a525c,
+    0 6px 16px -6px rgb(0 0 0 / 0.35);
+  color: #1f2a2e;
+}
+.room3d-label-list {
+  margin-top: 8px;
+}
+.room3d-label-list summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.room3d-label-list ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+}

@@ -140,3 +140,62 @@ describe("merged spaces", () => {
     expect(buildRoomScene("balcony", p, [])).toMatchObject({ type: "balcony", label: "Balcony" });
   });
 });
+
+describe("furniture-driven scenes and labels", () => {
+  const living = (furniture: HomeProfile["furniture"], concerns: HomeProfile["concerns"] = {}) =>
+    profile({ rooms: ["living_room"], concerns, furniture });
+
+  it("shows only the furniture the user has, using real models where available", () => {
+    const scene = buildRoomScene("living_room", living({ living_room: { items: ["sofa", "rug"], other: "", skipped: false } }), []);
+    expect(scene.fromAnswers).toBe(true);
+    expect(new Set(scene.furniture.map((b) => b.item))).toEqual(new Set(["sofa", "rug"]));
+    expect(scene.furniture.find((b) => b.item === "sofa")?.model).toBe("sofa");
+  });
+
+  it("falls back to the default layout when there are no answers or the room was skipped", () => {
+    expect(buildRoomScene("living_room", living(undefined), []).fromAnswers).toBe(false);
+    const skipped = buildRoomScene("living_room", living({ living_room: { items: ["sofa"], other: "", skipped: true } }), []);
+    expect(skipped.fromAnswers).toBe(false);
+    expect(skipped.furniture.map((b) => b.key)).toContain("coffee-table"); // default living room
+  });
+
+  it("labels issues at the spot and the user's furniture with its advice", () => {
+    const scene = buildRoomScene(
+      "living_room",
+      living({ living_room: { items: ["sofa", "floor_lamp"], other: "", skipped: false } }, { living_room: ["narrow_path", "poor_lighting"] }),
+      [],
+    );
+    const texts = scene.labels.map((l) => l.text);
+    expect(texts).toContain("Narrow path: keep this path clear");
+    expect(texts).toContain("Dim lighting: add a night light here");
+    expect(texts).toContain("Your sofa: move it back to widen the path");
+    expect(texts).toContain("Move your floor lamp to light the route");
+    const sofaLabel = scene.labels.find((l) => l.id === "furniture:sofa")!;
+    const sofa = scene.furniture.find((b) => b.item === "sofa")!;
+    expect(sofaLabel.at[0]).toBeCloseTo(sofa.position[0]);
+    expect(sofaLabel.at[1]).toBeGreaterThan(sofa.position[1] + sofa.size[1] / 2);
+    expect(sofaLabel.concern).toBe("narrow_path");
+  });
+
+  it("marks labels done when their checklist items are done", () => {
+    const p = living({ living_room: { items: ["sofa"], other: "", skipped: false } }, { living_room: ["narrow_path"] });
+    const done = ["living_room:narrow_path:f-sofa"];
+    expect(buildRoomScene("living_room", p, done).labels.find((l) => l.id === "furniture:sofa")?.text).toMatch(/^✓ Done — /);
+  });
+
+  it("merged rooms combine their furniture without overlaps", () => {
+    const p = profile({
+      layout: { homeType: "studio", doorIntoLiving: true, openKitchen: true, bathrooms: 1, attachedBathroom: false, balcony: false, customRooms: [] },
+      rooms: ["living_room"],
+      furniture: { living_room: { items: ["sofa", "bed", "fridge", "counter_stove", "shoe_rack", "dining_table", "chairs"], other: "", skipped: false } },
+    });
+    const floor = buildRoomScene("living_room", p, []).furniture.filter((b) => b.support === "floor");
+    expect(new Set(floor.map((b) => b.item))).toEqual(new Set(["sofa", "bed", "fridge", "counter_stove", "shoe_rack", "dining_table", "chairs"]));
+    for (let i = 0; i < floor.length; i++)
+      for (let j = i + 1; j < floor.length; j++) {
+        const [a, b] = [floor[i]!, floor[j]!];
+        const apart = [0, 2].some((k) => Math.abs(a.position[k]! - b.position[k]!) >= (a.size[k]! + b.size[k]!) / 2 - 0.005);
+        expect(apart, `${a.key} overlaps ${b.key}`).toBe(true);
+      }
+  });
+});

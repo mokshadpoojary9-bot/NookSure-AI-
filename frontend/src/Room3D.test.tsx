@@ -92,6 +92,41 @@ describe("3D room view — home layouts", () => {
   });
 });
 
+describe("3D room view — furniture and labels", () => {
+  it("lists every in-scene label as text, selects its checklist items, and can hide labels", async () => {
+    localStorage.setItem(
+      "nooksure.planner.v1",
+      JSON.stringify({
+        version: 3,
+        step: 5,
+        profile: {
+          aids: [],
+          rooms: ["living_room"],
+          concerns: { living_room: ["narrow_path"] },
+          furniture: { living_room: { items: ["sofa"], other: "", skipped: false } },
+          notes: "",
+        },
+        done: [],
+      }),
+    );
+    webgl(true);
+    await openPlanWith3D();
+    const toggle = await screen.findByRole("button", { name: "Hide labels" });
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByText(/Shows the furniture you told us about/)).toBeTruthy();
+
+    const list = within(screen.getByRole("list", { name: "All labels in this view" }));
+    expect(list.getByText("Room: Living room")).toBeTruthy();
+    expect(list.getByRole("button", { name: "Narrow path: keep this path clear" })).toBeTruthy();
+    fireEvent.click(list.getByRole("button", { name: "Your sofa: move it back to widen the path" }));
+    // Selecting a label highlights its checklist items.
+    expect(document.querySelectorAll("li.plan-item[data-selected]").length).toBeGreaterThan(0);
+
+    fireEvent.click(toggle);
+    expect(screen.getByRole("button", { name: "Show labels" }).getAttribute("aria-pressed")).toBe("false");
+  });
+});
+
 describe("3D room view", () => {
   it("is off by default and the toggle lazy-loads the 3D component", async () => {
     webgl(true);

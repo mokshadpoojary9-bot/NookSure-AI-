@@ -17,15 +17,17 @@ import {
   type PlanItem,
   type RoomId,
 } from "@nooksure/shared";
+import { FurnitureStep } from "../components/FurnitureStep";
 import { HomeLayoutStep } from "../components/HomeLayoutStep";
 import { SavePlanPanel } from "../components/SavePlanPanel";
 import { LazyRoomView3D } from "../components/room3d/LazyRoomView3D";
 import { PLAN_STEP, clearState, emptyState, loadState, saveState, type PlannerState } from "../storage";
 
-const STEPS = ["Household", "Your home", "Rooms", "Observations", "Your plan"] as const;
+const STEPS = ["Household", "Your home", "Rooms", "Furniture", "Observations", "Your plan"] as const;
 const HOME_STEP = 1;
 const ROOMS_STEP = 2;
-const OBSERVE_STEP = 3;
+const FURNITURE_STEP = 3;
+const OBSERVE_STEP = 4;
 
 const KIND_INTROS = {
   reuse: "Start here — use what is already in the home.",
@@ -89,6 +91,7 @@ export function PlannerPage() {
         {step === 0 && <HouseholdStep profile={profile} setProfile={setProfile} />}
         {step === HOME_STEP && <HomeLayoutStep layout={profile.layout} onChange={setLayout} />}
         {step === ROOMS_STEP && <RoomsStep profile={profile} setProfile={setProfile} />}
+        {step === FURNITURE_STEP && <FurnitureStep profile={profile} setProfile={setProfile} />}
         {step === OBSERVE_STEP && <ObservationsStep profile={profile} setProfile={setProfile} />}
         {step === PLAN_STEP && (
           <PlanStep

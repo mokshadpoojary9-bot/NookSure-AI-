@@ -217,6 +217,7 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
   const reducedMotion = useMemo(prefersReducedMotion, []);
   const roomName = scene.label; // e.g. "Living room + entrance"
   const select = (c: Concern) => onSelect?.(c);
+  const [showLabels, setShowLabels] = useState(true);
   // Contact shadows are baked once; re-bake when a model finishes loading so it gets a shadow too.
   const [modelsLoaded, setModelsLoaded] = useState(0);
   const onModelReady = useCallback(() => setModelsLoaded((n) => n + 1), []);
@@ -267,22 +268,26 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
                     <ringGeometry args={[isSelected ? 0.34 : 0.3, isSelected ? 0.44 : 0.38, 40]} />
                     <meshBasicMaterial color={color} transparent opacity={isSelected ? 0.85 : 0.5} toneMapped={false} />
                   </mesh>
-                  <Html position={issue.labelAt} center zIndexRange={[20, 0]}>
-                    {/* Mouse/touch shortcut only; keyboard users use the list below. */}
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      aria-hidden="true"
-                      className={`room3d-label status-${issue.status}${isSelected ? " selected" : ""}`}
-                      onClick={() => select(issue.concern)}
-                    >
-                      <span className="room3d-dot" style={{ background: color }} />
-                      {issue.label}
-                    </button>
-                  </Html>
                 </group>
               );
             })}
+            {/* In-scene labels: fixed pixel size, so they stay readable while rotating and zooming. */}
+            {showLabels &&
+              scene.labels.map((l) => (
+                <Html key={l.id} position={l.at} center zIndexRange={[20, 0]}>
+                  {/* Mouse/touch shortcut only; keyboard and screen-reader users use the label list below. */}
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    aria-hidden="true"
+                    className={`room3d-label kind-${l.kind} status-${l.status}${selected === l.concern ? " selected" : ""}`}
+                    onClick={() => select(l.concern)}
+                  >
+                    <span className="room3d-dot" style={{ background: STATUS_COLORS[l.status] }} />
+                    {l.text}
+                  </button>
+                </Html>
+              ))}
 
             {/* Soft grounding shadow, baked once per room. */}
             <ContactShadows
@@ -318,8 +323,18 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
       <figcaption>
         <p className="room3d-note">
           <strong>Illustrative layout, not to scale.</strong>
-          {webgl && " Drag to rotate, scroll or pinch to zoom."} Furniture positions are examples, not your home.
+          {webgl && " Drag to rotate, scroll or pinch to zoom."}{" "}
+          {scene.fromAnswers
+            ? "Shows the furniture you told us about, in example positions."
+            : "Furniture positions are examples, not your home."}
         </p>
+        {webgl && scene.labels.length > 0 && (
+          <div className="room3d-toolbar">
+            <button type="button" className="button small" aria-pressed={showLabels} onClick={() => setShowLabels((v) => !v)}>
+              {showLabels ? "Hide labels" : "Show labels"}
+            </button>
+          </div>
+        )}
         <ul className="room3d-legend" aria-label="Colour key">
           {(Object.keys(STATUS_LABELS) as IssueStatus[]).map((s) => (
             <li key={s}>
@@ -346,6 +361,21 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
               </li>
             ))}
           </ul>
+        )}
+        {scene.labels.length > 0 && (
+          <details className="room3d-label-list">
+            <summary>All labels in this view ({scene.labels.length + 1})</summary>
+            <ul aria-label="All labels in this view">
+              <li>Room: {roomName}</li>
+              {scene.labels.map((l) => (
+                <li key={l.id}>
+                  <button type="button" className="link-button" onClick={() => select(l.concern)}>
+                    {l.text}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </details>
         )}
       </figcaption>
     </figure>

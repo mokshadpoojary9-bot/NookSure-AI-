@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { HomeProfileSchema, legacyLayout, type HomeProfile } from "@nooksure/shared";
 
-/** Planner steps: 0 Household, 1 Your home, 2 Rooms, 3 Observations, 4 Your plan. */
-export const PLAN_STEP = 4;
-const VERSION = 2; // v2 added the "Your home" step
+/** Planner steps: 0 Household, 1 Your home, 2 Rooms, 3 Furniture, 4 Observations, 5 Your plan. */
+export const PLAN_STEP = 5;
+const VERSION = 3; // v2 added "Your home" (step 1); v3 added "Furniture" (step 3)
 
 /**
  * Planner draft saved in this browser. Signed-in users can additionally save
@@ -41,9 +41,12 @@ export function loadState(): PlannerState {
     const raw = localStorage.getItem(KEY);
     if (!raw) return emptyState();
     const data = JSON.parse(raw);
-    // v1 drafts: steps after Household move up one to make room for "Your home".
-    if (data && typeof data === "object" && data.version !== VERSION && typeof data.step === "number" && data.step >= 1) {
-      data.step = Math.min(data.step + 1, PLAN_STEP);
+    // Older drafts: shift steps to make room for steps added since they were saved.
+    if (data && typeof data === "object" && typeof data.step === "number") {
+      const v = typeof data.version === "number" ? data.version : 1;
+      if (v < 2 && data.step >= 1) data.step += 1; // "Your home" inserted at 1
+      if (v < 3 && data.step >= 3) data.step += 1; // "Furniture" inserted at 3
+      data.step = Math.min(data.step, PLAN_STEP);
     }
     const parsed = PlannerStateSchema.safeParse(data);
     if (!parsed.success) return emptyState();

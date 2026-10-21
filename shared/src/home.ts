@@ -182,7 +182,16 @@ export const typesOf = (s: RoomSpace): RoomType[] => [s.type, ...s.merged];
  * that still exist stay selected; observations and done items of a room that
  * gets merged (e.g. entrance → living room) move onto the merged space.
  */
-export function applyLayout<C extends string, P extends HasLayout & { concerns: Partial<Record<string, C[]>> }>(
+interface FurnitureLike {
+  items: string[];
+  other: string;
+  skipped: boolean;
+}
+
+export function applyLayout<
+  C extends string,
+  P extends HasLayout & { concerns: Partial<Record<string, C[]>>; furniture?: Partial<Record<string, FurnitureLike>> },
+>(
   profile: P,
   done: readonly string[],
   layout: HomeLayout,
@@ -198,11 +207,29 @@ export function applyLayout<C extends string, P extends HasLayout & { concerns: 
     concerns[to] = [...new Set([...(concerns[to] ?? []), ...concerns[from]!])];
     delete concerns[from];
   }
+  // Furniture answers move with their room too (items combined, notes joined).
+  let furniture = profile.furniture;
+  if (furniture) {
+    furniture = { ...furniture };
+    for (const [from, to] of into) {
+      const a = furniture[from];
+      if (!a) continue;
+      const b = furniture[to];
+      furniture[to] = {
+        items: [...new Set([...(b?.items ?? []), ...a.items])],
+        other: [b?.other, a.other].filter(Boolean).join("; "),
+        skipped: false,
+      };
+      delete furniture[from];
+    }
+  }
   const rooms = [...new Set(profile.rooms.map((r) => into.get(r) ?? r).filter((r) => exists.has(r)))];
   const moved = done.map((id) => {
     const [room, ...rest] = id.split(":");
     const to = room ? into.get(room) : undefined;
     return to ? [to, ...rest].join(":") : id;
   });
-  return { profile: { ...profile, layout, rooms, concerns }, done: [...new Set(moved)] };
+  const next = { ...profile, layout, rooms, concerns };
+  if (furniture) next.furniture = furniture as P["furniture"];
+  return { profile: next, done: [...new Set(moved)] };
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { RecommendationKindSchema, type RecommendationKind } from "./schemas";
 import { HomeLayoutSchema, RoomIdSchema, RoomTypeSchema, spaceOf, typesOf, type RoomSpace, type RoomType } from "./home";
+import { FurnitureItemSchema, RoomFurnitureSchema, type FurnitureItem } from "./furniture";
 
 /**
  * Deterministic, rule-based planning catalog for the "Use What You Have"
@@ -37,6 +38,8 @@ export const HomeProfileSchema = z.object({
   notes: z.string().max(1000).default(""),
   /** Older plans have none; see legacyLayout(). */
   layout: HomeLayoutSchema.optional(),
+  /** What the user already has, per room. Older plans have none. */
+  furniture: z.record(RoomIdSchema, RoomFurnitureSchema).optional(),
 });
 export type HomeProfile = z.infer<typeof HomeProfileSchema>;
 
@@ -49,6 +52,8 @@ export const PlanItemSchema = z.object({
   detail: z.string(),
   safetyNote: z.string().optional(),
   seekProfessional: z.boolean(),
+  /** Set when the suggestion is about furniture the user said they have. */
+  furniture: FurnitureItemSchema.optional(),
 });
 export type PlanItem = z.infer<typeof PlanItemSchema>;
 
@@ -96,6 +101,63 @@ const NO_IMPROVISED_SUPPORT =
   "Never use towel rails, sinks, furniture, or other fixtures as handholds — they are not built to take a person's weight.";
 const NO_STACKED_RAMPS =
   "Never build a ramp or step from stacked bricks, boards, boxes, or books — they can shift or collapse.";
+
+interface FurnitureSuggestion extends Omit<Suggestion, "aids"> {
+  /** Shown only when the user has this item in the room. */
+  requires: FurnitureItem;
+  /** Generic suggestion key this one replaces (same advice, about their own item). */
+  replaces?: string;
+}
+
+/**
+ * Furniture-aware suggestions: reuse/rearrange/remove what the user already has.
+ * Same safety rules as SUGGESTIONS — furniture is never suggested as support,
+ * a seat in a wet area, a step or a ramp.
+ */
+export const FURNITURE_SUGGESTIONS: Partial<Record<Concern, readonly FurnitureSuggestion[]>> = {
+  loose_rugs: [
+    { key: "f-rug", requires: "rug", replaces: "remove-rugs", kind: "remove", title: "Roll up your rug and store it", detail: "Take your rug off the walking route; curled edges and sliding rugs are common trip hazards." },
+  ],
+  clutter: [
+    { key: "f-shoe-rack", requires: "shoe_rack", kind: "reuse", title: "Use your shoe rack to keep shoes off the floor", detail: "Put shoes on your shoe rack as soon as they come off, so the doorway stays clear." },
+    { key: "f-shelves", requires: "shelves", kind: "reuse", title: "Use your shelves to get things off the floor", detail: "Move floor clutter onto your shelves at an easy height.", safetyNote: "Never climb shelves or stand on furniture to reach them." },
+    { key: "f-cabinet", requires: "cabinet", kind: "reuse", title: "Store loose items in your cabinet", detail: "Bags, keys and post can go in your cabinet instead of on the floor." },
+    { key: "f-storage", requires: "storage_cabinets", kind: "reuse", title: "Use your storage cabinets for floor items", detail: "Move items off the floor into your cabinets, keeping heavy things low." },
+  ],
+  narrow_path: [
+    { key: "f-sofa", requires: "sofa", kind: "rearrange", title: "Your sofa: move it back to widen the path", detail: "Push your sofa back against the wall so the main route is straight and clear for the mobility aid." },
+    { key: "f-armchair", requires: "armchair", kind: "rearrange", title: "Your armchair: move it out of the walking route", detail: "Place your armchair to the side so nobody has to squeeze past it." },
+    { key: "f-coffee-table", requires: "coffee_table", kind: "rearrange", title: "Your coffee table: move it to the side", detail: "A low table in the middle of a route is easy to walk into; move it beside the sofa instead." },
+    { key: "f-dining", requires: "dining_table", kind: "rearrange", title: "Your dining table: push it and the chairs to one side", detail: "Keep a clear route past the table, and tuck chairs in after use." },
+    { key: "f-plants", requires: "plants", kind: "rearrange", title: "Your plants: move the pots off the walking route", detail: "Put plant pots against the walls or on shelves at a safe height." },
+  ],
+  trailing_cables: [
+    { key: "f-tv-cables", requires: "tv_unit", kind: "rearrange", title: "Tidy the cables behind your TV unit", detail: "Run TV and charger cables behind your TV unit and along the wall so none cross the floor." },
+  ],
+  poor_lighting: [
+    { key: "f-floor-lamp", requires: "floor_lamp", replaces: "reuse-lamps", kind: "reuse", title: "Move your floor lamp to light the route", detail: "Stand your floor lamp where it lights the path between seats, doors and the bathroom, with its switch easy to reach." },
+    { key: "f-bedside-lamp", requires: "bedside_lamp", kind: "reuse", title: "Keep your bedside lamp within reach of the bed", detail: "So the light can be switched on before getting up at night." },
+  ],
+  out_of_reach: [
+    { key: "f-shelves-reach", requires: "shelves", kind: "rearrange", title: "Your shelves: keep daily items on the middle shelves", detail: "Between waist and shoulder height, so nobody stretches or bends low.", safetyNote: "Never stand on a chair or stool to reach high shelves." },
+    { key: "f-wardrobe", requires: "wardrobe", kind: "rearrange", title: "Your wardrobe: keep everyday clothes at easy height", detail: "Move daily clothes to the middle rails and drawers; store seasonal items higher." },
+    { key: "f-counter", requires: "counter_stove", kind: "rearrange", title: "Keep daily kitchen items at the front of your counter", detail: "Cups, kettle and everyday pans where they can be reached without stretching." },
+  ],
+  entry_step: [
+    { key: "f-mat-step", requires: "door_mat", kind: "remove", title: "Move your door mat away from the step edge", detail: "A mat near a step edge can slide or catch a foot or wheel." },
+  ],
+  no_support_rail: [
+    { key: "f-towel-rail", requires: "towel_rail", kind: "rearrange", title: "Your towel rail: use it for towels only", detail: "Don't lean on it or hold it for balance — it isn't built to take a person's weight.", safetyNote: NO_IMPROVISED_SUPPORT },
+    { key: "f-basin", requires: "washbasin", kind: "rearrange", title: "Your washbasin: don't lean on it for support", detail: "Basins can crack or come away from the wall under a person's weight.", safetyNote: NO_IMPROVISED_SUPPORT },
+  ],
+  slippery_floor: [
+    { key: "f-bath-mat", requires: "bath_mat", replaces: "remove-slip-mats", kind: "remove", title: "Check your bath mat grips — remove it if it slides", detail: "A mat with a rubber backing that stays put can stay; one that moves underfoot should go." },
+    { key: "f-door-mat", requires: "door_mat", kind: "remove", title: "Make sure your door mat lies flat and doesn't slide", detail: "Replace or remove a mat that curls at the edges or moves when stepped on." },
+    { key: "f-bucket", requires: "bucket_mug", kind: "rearrange", title: "Keep your bucket and mug within easy reach", detail: "Place them where they can be reached without bending far or stretching across a wet floor." },
+    { key: "f-stool", requires: "stool", kind: "rearrange", title: "Keep your stool out of the wet area", detail: "An ordinary stool can slip or tip on a wet floor. Don't use it to sit on while showering.", safetyNote: "For sitting while showering, use a purpose-made shower chair or stool with non-slip feet." },
+    { key: "f-shower-chair", requires: "stool", kind: "purchase", title: "Consider a purpose-made shower chair", detail: "Shower chairs have non-slip feet and are rated for a person's weight. An occupational therapist can advise on the right type.", seekProfessional: true },
+  ],
+};
 
 export const SUGGESTIONS: Record<Concern, readonly Suggestion[]> = {
   loose_rugs: [
@@ -256,9 +318,27 @@ export function generatePlan(profile: HomeProfile): PlanItem[] {
   const items: PlanItem[] = [];
   for (const room of profile.rooms) {
     const applicable = concernsFor(spaceOf(profile, room));
+    const has = new Set(profile.furniture?.[room]?.items ?? []);
     for (const concern of profile.concerns[room] ?? []) {
       if (!applicable.includes(concern)) continue;
+      // Advice about the user's own furniture comes first (within each kind, after sorting).
+      const own = (FURNITURE_SUGGESTIONS[concern] ?? []).filter((f) => has.has(f.requires));
+      const replaced = new Set(own.map((f) => f.replaces).filter(Boolean));
+      for (const f of own) {
+        items.push({
+          id: `${room}:${concern}:${f.key}`,
+          room,
+          concern,
+          kind: f.kind,
+          title: f.title,
+          detail: f.detail,
+          safetyNote: f.safetyNote,
+          seekProfessional: f.seekProfessional ?? false,
+          furniture: f.requires,
+        });
+      }
       for (const s of SUGGESTIONS[concern]) {
+        if (replaced.has(s.key)) continue;
         if (s.aids && !s.aids.some((aid) => profile.aids.includes(aid))) continue;
         items.push({
           id: `${room}:${concern}:${s.key}`,

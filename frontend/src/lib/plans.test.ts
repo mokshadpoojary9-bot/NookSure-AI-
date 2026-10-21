@@ -141,3 +141,13 @@ describe("listPlans / getPlan / deletePlan", () => {
     await expect(listPlans()).rejects.toThrow(/seem to be offline/);
   });
 });
+
+describe("furniture answers", () => {
+  it("are saved with the plan inside profile", async () => {
+    vi.clearAllMocks();
+    const furniture = { living_room: { items: ["sofa" as const], other: "recliner", skipped: false } };
+    await savePlan({ title: "With furniture", profile: { ...profile, rooms: ["living_room"], furniture }, done: [] });
+    const [, data] = fs.addDoc.mock.calls[0] as unknown as [unknown, { profile: { furniture: unknown } }];
+    expect(data.profile.furniture).toEqual(furniture);
+  });
+});
