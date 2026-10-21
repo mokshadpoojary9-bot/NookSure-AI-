@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { RoomTypeSchema, generatePlan, type HomeProfile } from "@nooksure/shared";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import manifest from "./models.manifest.json";
 import { CONCERN_PRIORITY, MODELS, ROOM_D, ROOM_W, STATUS_COLORS, WALL_H, buildRoomScene, fitModel } from "./sceneModel";
 
 const profile = (p: Partial<HomeProfile>): HomeProfile => ({ aids: [], rooms: [], concerns: {}, notes: "", ...p });
@@ -62,12 +63,23 @@ describe("real furniture models", () => {
     buildRoomScene(room, empty(room), []).furniture.filter((b) => b.model).map((b) => ({ room, b })),
   );
 
-  it("uses every registered model somewhere, and every model file ships in public/models", () => {
-    expect(new Set(slots.map((s) => s.b.model))).toEqual(new Set(Object.keys(MODELS)));
+  it("every model a room uses is a verified manifest model", () => {
+    for (const { b } of slots) expect(MODELS[b.model!], b.model).toBeDefined();
+  });
+
+  it("every manifest model file ships in public/models", () => {
     for (const { file } of Object.values(MODELS)) {
       // Tests run from frontend/ (npm workspaces); also allow running from the repo root.
-      const candidates = [resolve("public/models", file), resolve("frontend/public/models", file)];
+      const candidates = [resolve("public", file), resolve("frontend/public", file)];
       expect(candidates.some(existsSync), `missing ${file}`).toBe(true);
+    }
+  });
+
+  it("every model has an allowed licence, with an author for attribution", () => {
+    for (const m of manifest.models) {
+      expect(["CC0", "CC-BY-4.0"], m.id).toContain(m.license);
+      expect(m.author.length, m.id).toBeGreaterThan(0);
+      expect(m.bytes, `${m.id} over 5 MB`).toBeLessThan(5 * 1024 * 1024);
     }
   });
 

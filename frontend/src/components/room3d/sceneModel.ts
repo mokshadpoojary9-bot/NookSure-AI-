@@ -8,6 +8,7 @@ import {
   type RoomSpace,
   type RoomType,
 } from "@nooksure/shared";
+import manifest from "./models.manifest.json";
 
 /**
  * Pure description of the illustrative 3D room — no three.js here, so it can be
@@ -34,22 +35,33 @@ export interface Box {
 }
 
 /** Verified web-ready furniture models in /public/models. */
-export type ModelId = "coffee-table" | "armchair" | "dining-table" | "side-table" | "cabinet";
+/** Id of a verified model in models.manifest.json (written by tools/blender/publish-models.mjs). */
+export type ModelId = string;
 
 const QUARTER = Math.PI / 2;
 
+export interface ModelSpec {
+  /** Path under the site root, e.g. "models/living/sofa.glb". */
+  file: string;
+  /** Verified bounds in metres: [width x, height y, depth z]. */
+  size: Vec3;
+  /** Bounding-box centre on x/z (published models are centred: [0, 0]). */
+  center: [number, number];
+  name: string;
+  item: string;
+  room: string;
+}
+
 /**
- * Real furniture models (downloaded assets; textures downscaled to 1k) in /public/models.
- * size/center are the verified native bounds (metres, Y-up; center = bbox centre on x/z).
- * All face +z natively; each layout box sets rotationY. tools/blender/ re-creates the .glb files.
+ * Verified web-ready furniture models (Poly Haven CC0, Sketchfab CC-BY — see Credits).
+ * All are normalised: base at y = 0, centred, facing +z.
  */
-export const MODELS: Record<ModelId, { file: string; size: Vec3; center: [number, number] }> = {
-  "coffee-table": { file: "coffee-table/coffee_table.gltf", size: [0.6, 0.39, 1.202], center: [0, 0] },
-  armchair: { file: "armchair.glb", size: [0.85, 1.07, 0.77], center: [0, -0.03] },
-  "dining-table": { file: "dining-table.glb", size: [2.26, 0.88, 1.39], center: [0, 0.02] },
-  "side-table": { file: "side-table.glb", size: [0.55, 0.55, 0.45], center: [0, 0] },
-  cabinet: { file: "cabinet.glb", size: [2.44, 0.68, 0.52], center: [0, -0.01] },
-};
+export const MODELS: Record<ModelId, ModelSpec> = Object.fromEntries(
+  manifest.models.map((m) => [
+    m.id,
+    { file: m.path, size: m.size as Vec3, center: [0, 0], name: m.name, item: m.item, room: m.room },
+  ]),
+);
 
 export interface ModelFit {
   position: Vec3;
@@ -62,6 +74,7 @@ export interface ModelFit {
 /** Uniform scale that fits the model inside its layout box, centred, standing on the box's floor. */
 export function fitModel(b: Box, id: ModelId): ModelFit {
   const spec = MODELS[id];
+  if (!spec) throw new Error(`Unknown model: ${id}`);
   const rot = b.rotationY ?? 0;
   const sideways = Math.abs(Math.round(rot / (Math.PI / 2))) % 2 === 1;
   const [mx, my, mz] = spec.size;
@@ -201,7 +214,7 @@ const FURNITURE: Record<RoomType, Box[]> = {
     // Real 3D model in the browser; this box is the fallback if it can't load.
     onFloor("coffee-table", 0, -0.5, [1.2, 0.4, 0.6], WOOD, { ...round, model: "coffee-table", rotationY: QUARTER }),
     // Low cabinet as the TV unit, doors facing the room (+x).
-    onFloor("tv-unit", -2.6, -0.6, [0.45, 0.6, 2.1], WOOD_LIGHT, { ...round, model: "cabinet", rotationY: QUARTER }),
+    onFloor("tv-unit", -2.6, -0.6, [0.45, 0.6, 2.1], WOOD_LIGHT, round),
     at("tv", -2.72, 0.6, -0.6, [0.05, 0.62, 1.1], "#1d2329", round),
     onFloor("plant-pot", -2.6, -2.15, [0.32, 0.36, 0.32], POT, round),
     at("plant", -2.6, 0.36, -2.15, [0.44, 0.5, 0.44], LEAF, { radius: 0.18 }),

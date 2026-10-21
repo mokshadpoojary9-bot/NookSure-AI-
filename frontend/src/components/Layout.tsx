@@ -50,6 +50,9 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
           NookSure offers planning guidance only. It never certifies a home as safe and does not replace an
           occupational therapist or qualified installer.
         </p>
+        <p className="footer-links">
+          <a href={href("/safety")}>Safety principles</a> · <a href={href("/credits")}>Credits</a>
+        </p>
       </footer>
     </div>
   );

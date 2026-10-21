@@ -23,7 +23,7 @@ const WALL_T = 0.08;
 export const UNSUPPORTED_MESSAGE = "3D view isn't supported on this device.";
 
 // Served from /public/models (see MODELS in sceneModel.ts).
-const modelUrl = (id: ModelId) => `${import.meta.env.BASE_URL}models/${MODELS[id].file}`;
+const modelUrl = (id: ModelId) => `${import.meta.env.BASE_URL}${MODELS[id]!.file}`;
 
 /** Wood-plank floor drawn on a canvas at runtime — no image download. */
 function usePlankCanvas() {

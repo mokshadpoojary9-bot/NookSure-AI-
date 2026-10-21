@@ -1,0 +1,466 @@
+{
+  "_comment": "Assets to convert with build-models.mjs. src: blendFolder (already-extracted folder in Downloads), zip (extracted to Tools/nooksure-assets) or gltfFolder. Poly Haven assets are CC0; Sketchfab licenses are copied from each zip's license.txt.",
+  "models": [
+    {
+      "id": "sofa",
+      "name": "Sofa",
+      "room": "living",
+      "item": "sofa",
+      "src": {
+        "blendFolder": "Sofa_01_4k.blend"
+      },
+      "source": "Poly Haven (Sofa_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "armchair",
+      "name": "Armchair",
+      "room": "living",
+      "item": "armchair",
+      "src": {
+        "blendFolder": "ArmChair_01_4k.blend"
+      },
+      "source": "Poly Haven (ArmChair_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "coffee-table",
+      "name": "Coffee table",
+      "room": "living",
+      "item": "coffee_table",
+      "src": {
+        "gltfFolder": "modern_coffee_table_01_4k.gltf"
+      },
+      "source": "Poly Haven (modern_coffee_table_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "television",
+      "name": "Television",
+      "room": "living",
+      "item": "tv_unit",
+      "src": {
+        "blendFolder": "television_02_4k.blend"
+      },
+      "source": "Poly Haven (television_02)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "table-lamp",
+      "name": "Table lamp",
+      "room": "bedroom",
+      "item": "bedside_lamp",
+      "src": {
+        "zip": "industrial_pipe_lamp_4k.gltf.zip"
+      },
+      "source": "Poly Haven (industrial_pipe_lamp)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "potted-plant",
+      "name": "Potted plant",
+      "room": "living",
+      "item": "plants",
+      "src": {
+        "blendFolder": "potted_plant_01_4k.blend"
+      },
+      "maxTris": 40000,
+      "source": "Poly Haven (potted_plant_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "shelves",
+      "name": "Shelves",
+      "room": "living",
+      "item": "shelves",
+      "src": {
+        "blendFolder": "steel_frame_shelves_03_4k.blend"
+      },
+      "maxTris": 60000,
+      "source": "Poly Haven (steel_frame_shelves_03)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "throw-pillows",
+      "name": "Throw pillows",
+      "room": "living",
+      "item": "decor",
+      "src": {
+        "zip": "throw_pillows_01_4k.gltf.zip"
+      },
+      "source": "Poly Haven (throw_pillows_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "wall-clock",
+      "name": "Wall clock",
+      "room": "living",
+      "item": "decor",
+      "src": {
+        "zip": "wall_clock_4k.gltf.zip"
+      },
+      "source": "Poly Haven (wall_clock)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "picture-frame",
+      "name": "Picture frame",
+      "room": "living",
+      "item": "decor",
+      "src": {
+        "zip": "hanging_picture_frame_02_4k.gltf.zip"
+      },
+      "source": "Poly Haven (hanging_picture_frame_02)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "vase",
+      "name": "Ceramic vase",
+      "room": "living",
+      "item": "decor",
+      "src": {
+        "zip": "ceramic_vase_04_4k.gltf.zip"
+      },
+      "source": "Poly Haven (ceramic_vase_04)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "day-bed",
+      "name": "Bed (day bed)",
+      "room": "bedroom",
+      "item": "bed",
+      "src": {
+        "blendFolder": "vintage_day_bed_4k.blend"
+      },
+      "source": "Poly Haven (vintage_day_bed)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "side-table",
+      "name": "Side table",
+      "room": "bedroom",
+      "item": "side_tables",
+      "src": {
+        "blendFolder": "side_table_01_4k.blend"
+      },
+      "source": "Poly Haven (side_table_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "drawer",
+      "name": "Chest of drawers",
+      "room": "bedroom",
+      "item": "wardrobe",
+      "src": {
+        "zip": "vintage_wooden_drawer_01_4k.blend.zip"
+      },
+      "source": "Poly Haven (vintage_wooden_drawer_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "wooden-armchair",
+      "name": "Wooden armchair",
+      "room": "bedroom",
+      "item": "chair",
+      "src": {
+        "blendFolder": "chinese_armchair_4k.blend"
+      },
+      "source": "Poly Haven (chinese_armchair)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "alarm-clock",
+      "name": "Alarm clock",
+      "room": "bedroom",
+      "item": "decor",
+      "src": {
+        "zip": "alarm_clock_01_4k.gltf.zip"
+      },
+      "source": "Poly Haven (alarm_clock_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "dining-table",
+      "name": "Dining table",
+      "room": "kitchen",
+      "item": "dining_table",
+      "src": {
+        "blendFolder": "dining_table_4k.blend"
+      },
+      "source": "Poly Haven (dining_table)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "school-chair",
+      "name": "Chair",
+      "room": "kitchen",
+      "item": "chairs",
+      "src": {
+        "zip": "SchoolChair_01_4k.gltf.zip"
+      },
+      "source": "Poly Haven (SchoolChair_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "vintage-cabinet",
+      "name": "Cabinet",
+      "room": "kitchen",
+      "item": "storage_cabinets",
+      "src": {
+        "zip": "vintage_cabinet_01_4k.gltf.zip"
+      },
+      "source": "Poly Haven (vintage_cabinet_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "microwave",
+      "name": "Microwave",
+      "room": "kitchen",
+      "item": "decor",
+      "src": {
+        "blendFolder": "vintage_microwave_4k.blend"
+      },
+      "source": "Poly Haven (vintage_microwave)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "kettle",
+      "name": "Electric kettle",
+      "room": "kitchen",
+      "item": "decor",
+      "src": {
+        "blendFolder": "vintage_electric_kettle_4k.blend"
+      },
+      "source": "Poly Haven (vintage_electric_kettle)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "pot",
+      "name": "Enamel pot",
+      "room": "kitchen",
+      "item": "decor",
+      "src": {
+        "blendFolder": "pot_enamel_01_4k.blend"
+      },
+      "source": "Poly Haven (pot_enamel_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "cutting-board",
+      "name": "Cutting board",
+      "room": "kitchen",
+      "item": "decor",
+      "src": {
+        "blendFolder": "wooden_cutting_board_4k.blend"
+      },
+      "source": "Poly Haven (wooden_cutting_board)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "toilet",
+      "name": "Toilet (Western)",
+      "room": "bathroom",
+      "item": "toilet_western",
+      "src": {
+        "zip": "toilet.zip"
+      },
+      "source": "Sketchfab: https://sketchfab.com/3d-models/toilet-132a8ee2af3a40d39d270fbed3d3666c",
+      "author": "HippoStance",
+      "license": "CC-BY-4.0"
+    },
+    {
+      "id": "sink",
+      "name": "Washbasin",
+      "room": "bathroom",
+      "item": "washbasin",
+      "src": {
+        "zip": "sink.zip"
+      },
+      "source": "Sketchfab: https://sketchfab.com/3d-models/sink-29eae075fd384a03aa0e4cb06d9794df",
+      "author": "KIFIR",
+      "license": "CC-BY-4.0",
+      "fitHeight": 0.85
+    },
+    {
+      "id": "bathtub",
+      "name": "Bathtub",
+      "room": "bathroom",
+      "item": "bathtub",
+      "src": {
+        "zip": "bathtub.zip"
+      },
+      "source": "Sketchfab: https://sketchfab.com/3d-models/bathtub-3350f81025974c53808a2efd2b31d4fd",
+      "author": "3ddominator",
+      "license": "CC-BY-4.0",
+      "fitHeight": 0.6
+    },
+    {
+      "id": "towel-rail",
+      "name": "Towel rail with towel",
+      "room": "bathroom",
+      "item": "towel_rail",
+      "src": {
+        "zip": "towel_rail_and_towel_free.zip"
+      },
+      "source": "Sketchfab: https://sketchfab.com/3d-models/towel-rail-and-towel-free-3a21870d7a88497a8ea3bb576f431c31",
+      "author": "AMMediaGames",
+      "license": "CC-BY-4.0",
+      "fitHeight": 0.7,
+      "rotateDeg": 90,
+      "maxTris": 20000
+    },
+    {
+      "id": "towel-stack",
+      "name": "Towel stack",
+      "room": "bathroom",
+      "item": "decor",
+      "src": {
+        "zip": "towel_stack.zip"
+      },
+      "maxTris": 40000,
+      "source": "Sketchfab: https://sketchfab.com/3d-models/towel-stack-56ebf3bf8cb445c9a743d3bf31e314bd",
+      "author": "matousekfoto",
+      "license": "CC-BY-4.0",
+      "fitHeight": 0.22
+    },
+    {
+      "id": "toilet-paper-holder",
+      "name": "Toilet paper holder",
+      "room": "bathroom",
+      "item": "decor",
+      "src": {
+        "zip": "toilet_paper_holder_-_12mb.zip"
+      },
+      "source": "Sketchfab: https://sketchfab.com/3d-models/toilet-paper-holder-12mb-a725f835410b418ab6be823f29caf2a6",
+      "author": "Mehdi Shahsavan",
+      "license": "CC-BY-4.0",
+      "fitHeight": 0.16
+    },
+    {
+      "id": "bucket",
+      "name": "Plastic bucket",
+      "room": "bathroom",
+      "item": "bucket_mug",
+      "src": {
+        "zip": "plastic_bucket.zip"
+      },
+      "source": "Sketchfab: https://sketchfab.com/3d-models/plastic-bucket-006d0f237b4141ac93960fa51d6f0634",
+      "author": "MaX3Dd",
+      "license": "CC-BY-4.0"
+    },
+    {
+      "id": "garden-bench",
+      "name": "Garden bench",
+      "room": "garden",
+      "item": "bench",
+      "src": {
+        "zip": "painted_wooden_bench_4k.gltf.zip"
+      },
+      "source": "Poly Haven (painted_wooden_bench)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "outdoor-set",
+      "name": "Outdoor table and chairs",
+      "room": "garden",
+      "item": "table",
+      "src": {
+        "zip": "outdoor_table_chair_set_01_4k.gltf.zip"
+      },
+      "source": "Poly Haven (outdoor_table_chair_set_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "plastic-chair",
+      "name": "Plastic chair",
+      "room": "garden",
+      "item": "chairs",
+      "src": {
+        "zip": "plastic_monobloc_chair_01_4k.gltf.zip"
+      },
+      "source": "Poly Haven (plastic_monobloc_chair_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "mossy-rocks",
+      "name": "Mossy rocks",
+      "room": "garden",
+      "item": "decor",
+      "src": {
+        "zip": "rock_moss_set_02_4k.gltf.zip"
+      },
+      "maxTris": 30000,
+      "source": "Poly Haven (rock_moss_set_02)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "wooden-bucket",
+      "name": "Wooden bucket",
+      "room": "garden",
+      "item": "decor",
+      "src": {
+        "zip": "wooden_bucket_02_4k.gltf.zip"
+      },
+      "source": "Poly Haven (wooden_bucket_02)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    }
+  ],
+  "skipped": [
+    {
+      "file": "bucket.glb",
+      "reason": "Sketchfab Standard license (not Creative Commons) — redistribution in a public repo not allowed; used plastic_bucket (CC-BY-4.0) instead"
+    },
+    {
+      "file": "tv-cabinet",
+      "reason": "source file has doors/panels laid out apart (3 m wide) — doesn't read as a cabinet; TV unit uses a simple shape"
+    },
+    {
+      "file": "desk-lamp",
+      "reason": "thin articulated arm, barely visible and 1.4 m tall — floor lamp uses a simple shape"
+    },
+    {
+      "file": "books",
+      "reason": "67k triangles / 3 MB for decoration only"
+    },
+    {
+      "file": "plant-pot",
+      "reason": "periwinkle_plant is a spread of loose ground plants, not a pot — garden plant pots reuse the potted plant model"
+    },
+    {
+      "file": "shrub",
+      "reason": "shrub_sorrel_01 is a few tiny sprigs (6 cm) — not useful at room scale"
+    },
+    {
+      "file": "garden-light",
+      "reason": "street_lamp_02 is a wall-mounted lantern; its mounting side couldn't be verified — garden lights use a simple shape"
+    }
+  ]
+}

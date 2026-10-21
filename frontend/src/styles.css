@@ -1208,3 +1208,11 @@ textarea:focus {
     min-height: 0;
   }
 }
+
+/* Footer links + credits */
+.footer-links {
+  margin-top: 4px;
+}
+.credits-list li + li {
+  margin-top: 8px;
+}

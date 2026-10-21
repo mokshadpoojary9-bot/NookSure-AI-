@@ -2,6 +2,7 @@ import { AuthProvider } from "./auth/AuthContext";
 import type { AuthService } from "./auth/authService";
 import { Layout } from "./components/Layout";
 import { AssistantPage } from "./pages/AssistantPage";
+import { CreditsPage } from "./pages/CreditsPage";
 import { HomePage } from "./pages/HomePage";
 import { PlannerPage } from "./pages/PlannerPage";
 import { SavedPlansPage } from "./pages/SavedPlansPage";
@@ -18,6 +19,7 @@ export function App({ authService }: { authService?: AuthService } = {}) {
         {route === "/saved" && <SavedPlansPage />}
         {route === "/assistant" && <AssistantPage />}
         {route === "/safety" && <SafetyPage />}
+        {route === "/credits" && <CreditsPage />}
       </Layout>
     </AuthProvider>
   );
