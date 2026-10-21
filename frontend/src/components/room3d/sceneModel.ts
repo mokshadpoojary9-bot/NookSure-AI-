@@ -12,6 +12,7 @@ import {
 } from "@nooksure/shared";
 import manifest from "./models.manifest.json";
 import { furnitureBoxes } from "./furnitureLayout";
+import { decorFor } from "./decor";
 
 /**
  * Pure description of the illustrative 3D room — no three.js here, so it can be
@@ -122,7 +123,12 @@ export interface RoomScene {
   fromAnswers: boolean;
   /** Outdoor area (garden): open space with a house wall, door and path; steps if the user said so. */
   outdoor?: { steps: boolean };
+  /** Bedroom with an attached bathroom: a doorway in the right wall. */
+  attachedDoor?: { z: number; width: number };
 }
+
+/** Where the attached-bathroom doorway goes in the bedroom's right wall (kept clear of furniture slots). */
+export const ATTACHED_DOOR = { z: -0.4, width: 1.0 };
 
 /** Garden: door in the middle of the house wall (back), paved path from it to the front. */
 export const GARDEN_PATH = { x: 0, width: 1.0 };
@@ -130,11 +136,12 @@ export const GARDEN_STEPS_DEPTH = 0.6;
 
 export interface SceneLabel {
   id: string;
-  kind: "issue" | "furniture";
+  /** info: describes the room itself (e.g. a doorway); not tied to a checklist item. */
+  kind: "issue" | "furniture" | "info";
   text: string;
   at: Vec3;
-  /** Selecting the label highlights this concern's checklist items. */
-  concern: Concern;
+  /** Selecting the label highlights this concern's checklist items (none for info labels). */
+  concern?: Concern;
   status: IssueStatus;
 }
 
@@ -490,7 +497,13 @@ export function buildRoomScene(room: RoomId, profile: HomeProfile, done: readonl
   // The user's own furniture when they told us; otherwise the default illustrative layout.
   const own = profile.furniture?.[room];
   const fromAnswers = own && !own.skipped && own.items.length > 0 ? furnitureBoxes(space.type, own.items) : null;
-  const furniture: Box[] = fromAnswers ?? [...FURNITURE[space.type], ...space.merged.flatMap((t) => MERGED_EXTRAS[t] ?? [])];
+  const base: Box[] = fromAnswers ?? [...FURNITURE[space.type], ...space.merged.flatMap((t) => MERGED_EXTRAS[t] ?? [])];
+  // Decorative touches that never contradict the answers (only on furniture that's there).
+  const furniture: Box[] = [...base, ...decorFor(space.type, base)];
+
+  const layout = layoutOf(profile);
+  const attached =
+    room === "bedroom" && layout.attachedBathroom && layout.homeType !== "custom" && layout.homeType !== "studio";
 
   const labels: SceneLabel[] = issues.map((i) => ({
     id: `issue:${i.concern}`,
@@ -518,6 +531,10 @@ export function buildRoomScene(room: RoomId, profile: HomeProfile, done: readonl
     });
   }
 
+  if (attached) {
+    labels.push({ id: "info:attached-door", kind: "info", text: "Door to attached bathroom", at: [ROOM_W / 2 - 0.3, 2.15, ATTACHED_DOOR.z], status: "medium" });
+  }
+
   return {
     room,
     type: space.type,
@@ -529,6 +546,7 @@ export function buildRoomScene(room: RoomId, profile: HomeProfile, done: readonl
     issues,
     labels,
     fromAnswers: fromAnswers !== null,
-    ...(space.type === "garden" ? { outdoor: { steps: layoutOf(profile).gardenSteps } } : {}),
+    ...(space.type === "garden" ? { outdoor: { steps: layout.gardenSteps } } : {}),
+    ...(attached ? { attachedDoor: { ...ATTACHED_DOOR } } : {}),
   };
 }

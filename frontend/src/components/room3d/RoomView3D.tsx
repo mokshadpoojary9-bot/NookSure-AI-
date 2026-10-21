@@ -1,7 +1,8 @@
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { ContactShadows, Environment, Html, Lightformer, OrbitControls, RoundedBox, useGLTF } from "@react-three/drei";
 import { Component, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Concern, HomeProfile, RoomId } from "@nooksure/shared";
+import { FURNITURE_LABELS, type Concern, type HomeProfile, type RoomId } from "@nooksure/shared";
+import { computeOverlays, type Overlays } from "./overlays";
 import {
   DOOR,
   GARDEN_PATH,
@@ -232,7 +233,24 @@ function Shell({ scene }: { scene: RoomScene }) {
         </meshStandardMaterial>
       </mesh>
       {part("back", [0, h / 2, -d / 2], [w, h, WALL_T], WALL)}
-      {part("right", [w / 2, h / 2, 0], [WALL_T, h, d], WALL_SIDE)}
+      {scene.attachedDoor ? (
+        // Right wall with a doorway to the attached bathroom.
+        (() => {
+          const { z, width } = scene.attachedDoor;
+          const backLen = z - width / 2 + d / 2;
+          const frontLen = d / 2 - (z + width / 2);
+          return (
+            <>
+              {part("right-back", [w / 2, h / 2, -d / 2 + backLen / 2], [WALL_T, h, backLen], WALL_SIDE)}
+              {part("right-front", [w / 2, h / 2, d / 2 - frontLen / 2], [WALL_T, h, frontLen], WALL_SIDE)}
+              {part("right-lintel", [w / 2, h - 0.25, z], [WALL_T, 0.5, width], WALL_SIDE)}
+              {part("attached-door-frame", [w / 2 - 0.05, 1.05, z], [0.02, 2.1, width + 0.1], SKIRTING)}
+            </>
+          );
+        })()
+      ) : (
+        part("right", [w / 2, h / 2, 0], [WALL_T, h, d], WALL_SIDE)
+      )}
       {part("left-back", [-w / 2, h / 2, -d / 2 + leftBackLen / 2], [WALL_T, h, leftBackLen], WALL_SIDE)}
       {part("left-front", [-w / 2, h / 2, d / 2 - leftFrontLen / 2], [WALL_T, h, leftFrontLen], WALL_SIDE)}
       {part("lintel", [-w / 2, h - 0.25, DOOR.z], [WALL_T, 0.5, DOOR.width], WALL_SIDE)}
@@ -248,6 +266,77 @@ function Shell({ scene }: { scene: RoomScene }) {
         <meshStandardMaterial color="#dbeef5" emissive="#dbeef5" emissiveIntensity={0.6} roughness={0.2} />
       </mesh>
       {part("window-mullion", [0.45, 1.7, -d / 2 + WALL_T / 2 + 0.03], [0.03, 0.81, 0.01], SKIRTING)}
+    </group>
+  );
+}
+
+type OverlayId = "turning" | "path" | "grab" | "nonSlip" | "night";
+
+const OVERLAY_TOGGLES: { id: OverlayId; label: string; available: (o: Overlays, s: RoomScene) => boolean }[] = [
+  { id: "turning", label: "Turning circle", available: (_o, s) => !s.outdoor },
+  { id: "path", label: "Walking path", available: () => true },
+  { id: "grab", label: "Grab bar zones", available: (o) => o.grabZones.length > 0 },
+  { id: "nonSlip", label: "Non-slip zones", available: (o) => o.nonSlipZones.length > 0 },
+  { id: "night", label: "Night-light path", available: (o) => o.nightLights.length > 0 },
+];
+
+/** Overlays are drawn in code: flat, static shapes (no animation). */
+function OverlayMeshes({ overlays, shown, showLabels }: { overlays: Overlays; shown: Record<OverlayId, boolean>; showLabels: boolean }) {
+  const { turningCircle: tc, walkingPath: wp } = overlays;
+  const dx = wp.to[0] - wp.from[0];
+  const dz = wp.to[1] - wp.from[1];
+  const len = Math.hypot(dx, dz);
+  const blocked = wp.blockedBy.length > 0;
+  return (
+    <group>
+      {shown.turning && tc && (
+        <group position={[tc.center[0], 0.016, tc.center[1]]} rotation={[-Math.PI / 2, 0, 0]}>
+          <mesh>
+            <circleGeometry args={[tc.radius, 48]} />
+            <meshBasicMaterial color="#2f6f9e" transparent opacity={0.18} toneMapped={false} depthWrite={false} />
+          </mesh>
+          <mesh>
+            <ringGeometry args={[tc.radius - 0.04, tc.radius, 64]} />
+            <meshBasicMaterial color="#2f6f9e" transparent opacity={0.8} toneMapped={false} />
+          </mesh>
+        </group>
+      )}
+      {shown.path && (
+        <mesh position={[(wp.from[0] + wp.to[0]) / 2, 0.014, (wp.from[1] + wp.to[1]) / 2]} rotation={[-Math.PI / 2, 0, -Math.atan2(dz, dx)]}>
+          <planeGeometry args={[len, wp.width]} />
+          <meshBasicMaterial color={blocked ? "#e0a030" : "#3a9a5b"} transparent opacity={0.32} toneMapped={false} depthWrite={false} />
+        </mesh>
+      )}
+      {shown.grab &&
+        overlays.grabZones.map((z) => (
+          <group key={z.key}>
+            <mesh position={z.position}>
+              <boxGeometry args={z.size} />
+              <meshBasicMaterial color="#d64545" transparent opacity={0.4} toneMapped={false} />
+            </mesh>
+            {showLabels && (
+              <Html position={[z.position[0], z.position[1] + z.size[1] / 2 + 0.2, z.position[2]]} center zIndexRange={[19, 0]}>
+                <span className="room3d-label kind-overlay" aria-hidden="true">
+                  {z.label}
+                </span>
+              </Html>
+            )}
+          </group>
+        ))}
+      {shown.nonSlip &&
+        overlays.nonSlipZones.map((z) => (
+          <mesh key={z.key} position={z.position}>
+            <boxGeometry args={z.size} />
+            <meshBasicMaterial color="#2f6f9e" transparent opacity={0.35} toneMapped={false} depthWrite={false} />
+          </mesh>
+        ))}
+      {shown.night &&
+        overlays.nightLights.map((p, i) => (
+          <mesh key={i} position={p}>
+            <boxGeometry args={[0.07, 0.07, 0.07]} />
+            <meshStandardMaterial color="#ffd27a" emissive="#ffc04d" emissiveIntensity={1.2} />
+          </mesh>
+        ))}
     </group>
   );
 }
@@ -280,6 +369,12 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
   const roomName = scene.label; // e.g. "Living room + entrance"
   const select = (c: Concern) => onSelect?.(c);
   const [showLabels, setShowLabels] = useState(true);
+  const overlays = useMemo(() => computeOverlays(scene), [scene]);
+  const [shown, setShown] = useState<Record<OverlayId, boolean>>({ turning: false, path: false, grab: false, nonSlip: false, night: false });
+  const friendly = (key: string) => {
+    const b = scene.furniture.find((x) => x.key === key);
+    return (b?.item ? FURNITURE_LABELS[b.item].label : key.replace(/[-_]\d*$/, "").replace(/[-_]/g, " ")).toLowerCase();
+  };
   // Contact shadows are baked once; re-bake when a model finishes loading so it gets a shadow too.
   const [modelsLoaded, setModelsLoaded] = useState(0);
   const onModelReady = useCallback(() => setModelsLoaded((n) => n + 1), []);
@@ -343,13 +438,15 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
                     tabIndex={-1}
                     aria-hidden="true"
                     className={`room3d-label kind-${l.kind} status-${l.status}${selected === l.concern ? " selected" : ""}`}
-                    onClick={() => select(l.concern)}
+                    onClick={() => l.concern && select(l.concern)}
                   >
                     <span className="room3d-dot" style={{ background: STATUS_COLORS[l.status] }} />
                     {l.text}
                   </button>
                 </Html>
               ))}
+
+            <OverlayMeshes overlays={overlays} shown={shown} showLabels={showLabels} />
 
             {/* Soft grounding shadow, baked once per room. */}
             <ContactShadows
@@ -390,11 +487,24 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
             ? "Shows the furniture you told us about, in example positions."
             : "Furniture positions are examples, not your home."}
         </p>
-        {webgl && scene.labels.length > 0 && (
-          <div className="room3d-toolbar">
-            <button type="button" className="button small" aria-pressed={showLabels} onClick={() => setShowLabels((v) => !v)}>
-              {showLabels ? "Hide labels" : "Show labels"}
-            </button>
+        {webgl && (
+          <div className="room3d-toolbar" role="group" aria-label="3D view options">
+            {scene.labels.length > 0 && (
+              <button type="button" className="button small" aria-pressed={showLabels} onClick={() => setShowLabels((v) => !v)}>
+                {showLabels ? "Hide labels" : "Show labels"}
+              </button>
+            )}
+            {OVERLAY_TOGGLES.filter((o) => o.available(overlays, scene)).map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                className="button small"
+                aria-pressed={shown[o.id]}
+                onClick={() => setShown((s) => ({ ...s, [o.id]: !s[o.id] }))}
+              >
+                {o.label}
+              </button>
+            ))}
           </div>
         )}
         <ul className="room3d-legend" aria-label="Colour key">
@@ -431,14 +541,38 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
               <li>Room: {roomName}</li>
               {scene.labels.map((l) => (
                 <li key={l.id}>
-                  <button type="button" className="link-button" onClick={() => select(l.concern)}>
-                    {l.text}
-                  </button>
+                  {l.concern ? (
+                    <button type="button" className="link-button" onClick={() => select(l.concern!)}>
+                      {l.text}
+                    </button>
+                  ) : (
+                    l.text
+                  )}
                 </li>
               ))}
             </ul>
           </details>
         )}
+        <div className="room3d-check">
+          <h4>Accessibility check (illustrative)</h4>
+          <ul aria-label="Accessibility check" aria-live="polite">
+            {!scene.outdoor && (
+              <li>
+                {overlays.turningCircle
+                  ? "A clear 1.5 m wheelchair turning space fits in this layout."
+                  : "No clear 1.5 m turning space in this layout — moving furniture could make room."}
+              </li>
+            )}
+            <li>
+              {overlays.walkingPath.blockedBy.length === 0
+                ? "The walking route from the door is clear."
+                : `The walking route from the door passes: ${overlays.walkingPath.blockedBy.map(friendly).join(", ")}.`}
+            </li>
+            {overlays.grabZones.length > 0 && <li>{overlays.grabZones.length} grab bar / handrail zone(s) — to be installed by a professional.</li>}
+            {overlays.nonSlipZones.length > 0 && <li>Non-slip zones: {overlays.nonSlipZones.map((z) => z.label.replace("Non-slip zone: ", "")).join(", ")}.</li>}
+            {overlays.nightLights.length > 0 && <li>Night-light route from the bed to the {scene.attachedDoor ? "attached bathroom" : "door"}.</li>}
+          </ul>
+        </div>
       </figcaption>
     </figure>
   );

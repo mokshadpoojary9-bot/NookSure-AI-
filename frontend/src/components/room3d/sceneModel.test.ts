@@ -90,7 +90,9 @@ describe("real furniture models", () => {
       expect(fit.scale, `${where} scale`).toBeGreaterThan(0.5);
       expect(fit.scale, `${where} scale`).toBeLessThan(1.3);
       fit.size.forEach((v, i) => expect(v, `${where} size[${i}]`).toBeLessThanOrEqual(b.size[i]! + 1e-9));
-      expect(fit.position[1], `${where} floor`).toBe(0);
+      // Furniture stands on the floor; decor sits exactly at the bottom of its own slot (a wall or a surface).
+      expect(fit.position[1], `${where} base`).toBeCloseTo(b.position[1] - b.size[1] / 2, 9);
+      if (!b.key.startsWith("decor-")) expect(fit.position[1], `${where} floor`).toBe(0);
       expect(Math.abs(fit.position[0]) + fit.size[0] / 2, `${where} x`).toBeLessThanOrEqual(ROOM_W / 2);
       expect(Math.abs(fit.position[2]) + fit.size[2] / 2, `${where} z`).toBeLessThanOrEqual(ROOM_D / 2);
     }
@@ -148,7 +150,8 @@ describe("furniture-driven scenes and labels", () => {
   it("shows only the furniture the user has, using real models where available", () => {
     const scene = buildRoomScene("living_room", living({ living_room: { items: ["sofa", "rug"], other: "", skipped: false } }), []);
     expect(scene.fromAnswers).toBe(true);
-    expect(new Set(scene.furniture.map((b) => b.item))).toEqual(new Set(["sofa", "rug"]));
+    // Only the user's items (decoration has no item and never stands in for furniture).
+    expect(new Set(scene.furniture.filter((b) => b.item).map((b) => b.item))).toEqual(new Set(["sofa", "rug"]));
     expect(scene.furniture.find((b) => b.item === "sofa")?.model).toBe("sofa");
   });
 

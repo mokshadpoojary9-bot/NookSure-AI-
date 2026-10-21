@@ -5,7 +5,7 @@ import {
   KIND_ORDER,
   MOBILITY_AID_LABELS,
   MobilityAidSchema,
-  applyLayout,
+  changeLayout,
   concernsFor,
   generatePlan,
   spaceOf,
@@ -61,10 +61,10 @@ export function PlannerPage() {
     headingRef.current?.focus();
   };
 
-  // Editing the layout keeps selections that still apply (see applyLayout).
+  // Editing the layout keeps selections that still apply, and splits merged rooms back (see changeLayout).
   const setLayout = (layout: HomeLayout) =>
     setState((s) => {
-      const next = applyLayout(s.profile, s.done, layout);
+      const next = changeLayout(s.profile, s.done, layout);
       return { ...s, profile: next.profile, done: next.done };
     });
 

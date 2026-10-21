@@ -1297,3 +1297,32 @@ textarea:focus {
   margin: 6px 0 0;
   padding-left: 18px;
 }
+
+/* 3D overlays + accessibility check (Phase 4) */
+.room3d-toolbar {
+  flex-wrap: wrap;
+}
+.room3d-toolbar .button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.room3d-label.kind-overlay {
+  background: #fff4f4;
+  color: #8f2a2a;
+  box-shadow: 0 0 0 1.5px #d64545;
+}
+.room3d-check {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.room3d-check h4 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+}
+.room3d-check ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.9rem;
+}

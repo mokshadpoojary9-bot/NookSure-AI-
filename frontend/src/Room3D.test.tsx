@@ -153,6 +153,40 @@ describe("3D room view — garden", () => {
   });
 });
 
+describe("3D room view — accessibility overlays", () => {
+  it("offers overlay toggles for the room and a text accessibility check", async () => {
+    localStorage.setItem(
+      "nooksure.planner.v1",
+      JSON.stringify({
+        version: 3,
+        step: 5,
+        profile: {
+          aids: ["wheelchair"],
+          rooms: ["bathroom"],
+          concerns: { bathroom: ["slippery_floor"] },
+          furniture: { bathroom: { items: ["toilet_western", "shower"], other: "", skipped: false } },
+          notes: "",
+        },
+        done: [],
+      }),
+    );
+    webgl(true);
+    await openPlanWith3D();
+    const bar = within(await screen.findByRole("group", { name: "3D view options" }));
+    for (const name of ["Turning circle", "Walking path", "Grab bar zones", "Non-slip zones"]) {
+      expect(bar.getByRole("button", { name }).getAttribute("aria-pressed")).toBe("false");
+    }
+    expect(bar.queryByRole("button", { name: "Night-light path" })).toBeNull(); // no bed in a bathroom
+    fireEvent.click(bar.getByRole("button", { name: "Grab bar zones" }));
+    expect(bar.getByRole("button", { name: "Grab bar zones" }).getAttribute("aria-pressed")).toBe("true");
+
+    const check = screen.getByRole("list", { name: "Accessibility check" });
+    expect(check.textContent).toMatch(/turning space/);
+    expect(check.textContent).toMatch(/2 grab bar \/ handrail zone\(s\) — to be installed by a professional/);
+    expect(check.textContent).toMatch(/Non-slip zones: shower floor, in front of the basin/);
+  });
+});
+
 describe("3D room view", () => {
   it("is off by default and the toggle lazy-loads the 3D component", async () => {
     webgl(true);

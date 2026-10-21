@@ -1,7 +1,19 @@
 import { z } from "zod";
 import { RecommendationKindSchema, type RecommendationKind } from "./schemas";
-import { HomeLayoutSchema, RoomIdSchema, RoomTypeSchema, spaceOf, typesOf, type RoomSpace, type RoomType } from "./home";
-import { FurnitureItemSchema, RoomFurnitureSchema, type FurnitureItem } from "./furniture";
+import {
+  HomeLayoutSchema,
+  RoomIdSchema,
+  RoomTypeSchema,
+  applyLayout,
+  generateRooms,
+  spaceOf,
+  spacesOf,
+  typesOf,
+  type HomeLayout,
+  type RoomSpace,
+  type RoomType,
+} from "./home";
+import { FURNITURE_BY_ROOM, FurnitureItemSchema, RoomFurnitureSchema, furnitureChoicesFor, type FurnitureItem } from "./furniture";
 
 /**
  * Deterministic, rule-based planning catalog for the "Use What You Have"
@@ -428,6 +440,53 @@ export const SUGGESTIONS: Record<Concern, readonly Suggestion[]> = {
  * Build a plan from a home profile. Items are ordered reuse → rearrange →
  * remove → purchase, then by the order the rooms were chosen.
  */
+/**
+ * Change a profile's home layout. Like applyLayout(), plus the reverse of a merge:
+ * when a room that was merged into the living room becomes its own room again,
+ * observations and furniture that only belong to that room move back to it.
+ */
+export function changeLayout(profile: HomeProfile, done: readonly string[], layout: HomeLayout): { profile: HomeProfile; done: string[] } {
+  const newSpaces = generateRooms(layout);
+  const standalone = new Set(newSpaces.map((s) => s.id));
+  let p: HomeProfile = { ...profile, concerns: { ...profile.concerns }, furniture: profile.furniture && { ...profile.furniture } };
+  let d = [...done];
+
+  for (const old of spacesOf(profile)) {
+    const now = newSpaces.find((s) => s.id === old.id);
+    for (const t of old.merged) {
+      if (!standalone.has(t) || (now && now.merged.includes(t))) continue; // still merged
+      const keepTypes = now ? typesOf(now) : [old.type];
+      const belongsOnlyTo = (c: Concern) => CONCERNS[c].rooms.includes(t) && !CONCERNS[c].rooms.some((r) => keepTypes.includes(r));
+
+      const moving = (p.concerns[old.id] ?? []).filter(belongsOnlyTo);
+      if (moving.length) {
+        p.concerns[old.id] = (p.concerns[old.id] ?? []).filter((c) => !moving.includes(c));
+        p.concerns[t] = [...new Set([...(p.concerns[t] ?? []), ...moving])];
+        d = d.map((id) => {
+          const [room, c, ...rest] = id.split(":");
+          return room === old.id && moving.includes(c as Concern) ? [t, c, ...rest].join(":") : id;
+        });
+      }
+
+      const own = p.furniture?.[old.id];
+      if (own && p.furniture) {
+        const keep = new Set(now ? furnitureChoicesFor(now) : FURNITURE_BY_ROOM[old.type] ?? []);
+        const back = own.items.filter((i) => (FURNITURE_BY_ROOM[t] ?? []).includes(i) && !keep.has(i));
+        if (back.length) {
+          p.furniture[old.id] = { ...own, items: own.items.filter((i) => !back.includes(i)) };
+          const there = p.furniture[t];
+          p.furniture[t] = { items: [...new Set([...(there?.items ?? []), ...back])], other: there?.other ?? "", skipped: false };
+        }
+      }
+
+      // If the merged room was being planned, keep planning its separated part too.
+      if ((moving.length || p.furniture?.[t]) && p.rooms.includes(old.id) && !p.rooms.includes(t)) p = { ...p, rooms: [...p.rooms, t] };
+    }
+  }
+  if (!profile.furniture) delete p.furniture;
+  return applyLayout(p, d, layout);
+}
+
 /** Concerns that can apply to a space (any of its own or merged room types). */
 export function concernsFor(space: RoomSpace): Concern[] {
   const types = typesOf(space);
