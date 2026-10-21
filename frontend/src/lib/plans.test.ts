@@ -57,6 +57,14 @@ describe("savePlan", () => {
     expect(JSON.stringify(data)).not.toContain("user-1");
   });
 
+  it("saves the home layout with the plan, inside profile (no new top-level fields for the rules)", async () => {
+    const layout = { homeType: "2bhk" as const, doorIntoLiving: true, openKitchen: false, bathrooms: 2, attachedBathroom: true, balcony: true, customRooms: [] };
+    await savePlan({ title: "Flat", profile: { ...profile, layout, rooms: ["living_room", "bedroom_2"] }, done: [] });
+    const [, data] = fs.addDoc.mock.calls[0] as unknown as [unknown, Record<string, unknown>];
+    expect((data.profile as { layout: unknown }).layout).toEqual(layout);
+    expect(Object.keys(data).sort()).toEqual(["appVersion", "createdAt", "done", "items", "profile", "title", "updatedAt"]);
+  });
+
   it("updates an existing plan without touching createdAt", async () => {
     await savePlan({ title: "Plan", profile, done: [] }, "plan-9");
     const [ref, data] = fs.updateDoc.mock.calls[0] as unknown as [{ path: string }, Record<string, unknown>];

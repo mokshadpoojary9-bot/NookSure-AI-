@@ -1,4 +1,13 @@
-import { CONCERNS, generatePlan, type Concern, type HomeProfile, type RoomType } from "@nooksure/shared";
+import {
+  concernsFor,
+  generatePlan,
+  spaceOf,
+  type Concern,
+  type HomeProfile,
+  type RoomId,
+  type RoomSpace,
+  type RoomType,
+} from "@nooksure/shared";
 
 /**
  * Pure description of the illustrative 3D room — no three.js here, so it can be
@@ -77,7 +86,11 @@ export interface IssueMarker {
 }
 
 export interface RoomScene {
-  room: RoomType;
+  room: RoomId;
+  /** Base layout used for this space. */
+  type: RoomType;
+  /** e.g. "Living room + entrance". */
+  label: string;
   width: number;
   depth: number;
   wallHeight: number;
@@ -226,6 +239,18 @@ const FURNITURE: Record<RoomType, Box[]> = {
     ...legs("chair", -0.4, 1.0, 0.45, 0.45, 0.42, DARK),
     at("chair-back", -0.4, 0.47, 1.2, [0.45, 0.45, 0.05], DARK, round),
   ],
+  balcony: [
+    at("balcony-table", 0.8, 0.5, -1.4, [0.6, 0.04, 0.6], WOOD, round),
+    ...legs("balcony-table", 0.8, -1.4, 0.6, 0.6, 0.5, DARK),
+    onFloor("balcony-chair-1", 0, -1.4, [0.45, 0.42, 0.45], DARK, round),
+    at("balcony-chair-1-back", -0.2, 0.42, -1.4, [0.05, 0.4, 0.45], DARK, round),
+    onFloor("balcony-chair-2", 1.6, -1.4, [0.45, 0.42, 0.45], DARK, round),
+    at("balcony-chair-2-back", 1.8, 0.42, -1.4, [0.05, 0.4, 0.45], DARK, round),
+    onFloor("balcony-pot-1", -2.4, -2.1, [0.4, 0.4, 0.4], POT, round),
+    at("balcony-plant-1", -2.4, 0.4, -2.1, [0.5, 0.55, 0.5], LEAF, { radius: 0.2 }),
+    onFloor("balcony-pot-2", 2.5, -2.1, [0.36, 0.36, 0.36], POT, round),
+    at("balcony-plant-2", 2.5, 0.36, -2.1, [0.46, 0.5, 0.46], LEAF, { radius: 0.18 }),
+  ],
   hallway_stairs: [
     // Stairs up along the back wall, built from stepped boxes (illustration only).
     ...[0, 1, 2, 3, 4].map((i) => onFloor(`stair-${i}`, 1.6 - i * 0.4, -2.0, [0.4, 0.2 * (i + 1), 1], WOOD_LIGHT, round)),
@@ -235,11 +260,33 @@ const FURNITURE: Record<RoomType, Box[]> = {
   ],
 };
 
+/** Extra furniture added to the living room when another room is merged into it. */
+const MERGED_EXTRAS: Partial<Record<RoomType, Box[]>> = {
+  // Open kitchen: a kitchenette counter in the back-right corner.
+  kitchen: [
+    onFloor("kitchenette", 2.15, -2.2, [1.5, 0.86, 0.6], WOOD_LIGHT, round),
+    at("kitchenette-top", 2.15, 0.86, -2.2, [1.5, 0.05, 0.6], WORKTOP),
+    at("kitchenette-hob", 2.35, 0.91, -2.2, [0.5, 0.01, 0.4], DARK),
+  ],
+  // Door opens into the room: a shoe rack just inside it.
+  entrance: [onFloor("entry-shoe-rack", -2.2, 2.2, [0.6, 0.5, 0.35], WOOD_LIGHT, round)],
+  // Studio sleeping area: a single bed front-right.
+  bedroom: [
+    onFloor("studio-bed", 2.35, 1.35, [0.95, 0.3, 1.9], WOOD, round),
+    at("studio-mattress", 2.35, 0.3, 1.4, [0.9, 0.2, 1.8], LINEN, soft),
+    at("studio-pillow", 2.35, 0.5, 0.65, [0.7, 0.12, 0.3], WHITE, soft),
+    at("studio-blanket", 2.35, 0.5, 1.7, [0.92, 0.04, 1.0], FABRIC_LIGHT, round),
+  ],
+};
+
 const RED_ZONE_Y = 0.02; // floor patches sit just above the floor
 
 /** Issue geometry per concern, placed sensibly for each room. */
-function issueBoxes(concern: Concern, room: RoomType, color: string): { boxes: Box[]; labelAt: Vec3 } {
+function issueBoxes(concern: Concern, space: RoomSpace, color: string): { boxes: Box[]; labelAt: Vec3 } {
+  const room = space.type;
+  const has = (t: RoomType) => space.type === t || space.merged.includes(t);
   const doorX = -ROOM_W / 2;
+  const lampX = space.merged.includes("bedroom") ? 1.3 : 2.4;
   switch (concern) {
     case "loose_rugs":
       return { boxes: [box("rug", [0.2, RED_ZONE_Y, 0.9], [1.8, 0.03, 1.1], color)], labelAt: [0.2, 0.5, 0.9] };
@@ -265,10 +312,11 @@ function issueBoxes(concern: Concern, room: RoomType, color: string): { boxes: B
     case "poor_lighting":
       return {
         boxes: [
-          box("lamp-stand", [2.4, 0.7, 1.6], [0.08, 1.4, 0.08], DARK),
-          box("lamp-shade", [2.4, 1.5, 1.6], [0.45, 0.35, 0.45], color),
+          // Moved clear of a studio bed if there is one.
+          box("lamp-stand", [lampX, 0.7, 1.6], [0.08, 1.4, 0.08], DARK),
+          box("lamp-shade", [lampX, 1.5, 1.6], [0.45, 0.35, 0.45], color),
         ],
-        labelAt: [2.4, 2.0, 1.6],
+        labelAt: [lampX, 2.0, 1.6],
       };
     case "out_of_reach": {
       const z = -ROOM_D / 2 + 0.2;
@@ -282,30 +330,33 @@ function issueBoxes(concern: Concern, room: RoomType, color: string): { boxes: B
     case "no_support_rail": {
       // A highlighted wall zone where purpose-built support should be installed —
       // deliberately NOT drawn as a rail or handle.
-      const at: Vec3 = room === "bathroom" ? [ROOM_W / 2 - 0.03, 0.95, -1.9] : room === "entrance" ? [doorX + 0.03, 0.95, 0.2] : [ROOM_W / 2 - 0.03, 0.95, -1.2];
+      const at: Vec3 = room === "bathroom" ? [ROOM_W / 2 - 0.03, 0.95, -1.9] : room === "entrance" ? [doorX + 0.03, 0.95, 0.2] : has("entrance") ? [doorX + 0.03, 0.95, 2.05] : [ROOM_W / 2 - 0.03, 0.95, -1.2];
       return { boxes: [box("support-zone", at, [0.04, 0.6, 0.9], color)], labelAt: [at[0] - 0.4, 1.5, at[2]] };
     }
     case "slippery_floor": {
-      const at: Vec3 = room === "bathroom" ? [-1.0, RED_ZONE_Y, -1.0] : room === "kitchen" ? [0.3, RED_ZONE_Y, -1.4] : [doorX + 0.9, RED_ZONE_Y, DOOR.z];
+      const at: Vec3 = room === "bathroom" ? [-1.0, RED_ZONE_Y, -1.0] : room === "kitchen" ? [0.3, RED_ZONE_Y, -1.4] : has("kitchen") ? [1.9, RED_ZONE_Y, -1.45] : [doorX + 0.9, RED_ZONE_Y, DOOR.z];
       return { boxes: [box("slip-zone", at, [1.3, 0.02, 1.1], color)], labelAt: [at[0], 0.5, at[2]] };
     }
   }
 }
 
 /** Builds the scene for one room from the plan the app already produces. */
-export function buildRoomScene(room: RoomType, profile: HomeProfile, done: readonly string[]): RoomScene {
+export function buildRoomScene(room: RoomId, profile: HomeProfile, done: readonly string[]): RoomScene {
+  const space = spaceOf(profile, room);
   const items = generatePlan(profile);
   const doneSet = new Set(done);
-  const concerns = (profile.concerns[room] ?? []).filter((c) => CONCERNS[c].rooms.includes(room));
+  const applicable = concernsFor(space);
+  const concerns = (profile.concerns[room] ?? []).filter((c) => applicable.includes(c));
 
   const issues = concerns.map((concern): IssueMarker => {
     const related = items.filter((i) => i.room === room && i.concern === concern);
     const allDone = related.length > 0 && related.every((i) => doneSet.has(i.id));
     const status: IssueStatus = allDone ? "done" : CONCERN_PRIORITY[concern];
     const color = STATUS_COLORS[status];
-    const { boxes, labelAt } = issueBoxes(concern, room, color);
+    const { boxes, labelAt } = issueBoxes(concern, space, color);
     return { concern, label: CONCERN_SHORT[concern], status, boxes, labelAt };
   });
 
-  return { room, width: ROOM_W, depth: ROOM_D, wallHeight: WALL_H, furniture: FURNITURE[room], issues };
+  const furniture = [...FURNITURE[space.type], ...space.merged.flatMap((t) => MERGED_EXTRAS[t] ?? [])];
+  return { room, type: space.type, label: space.label, width: ROOM_W, depth: ROOM_D, wallHeight: WALL_H, furniture, issues };
 }

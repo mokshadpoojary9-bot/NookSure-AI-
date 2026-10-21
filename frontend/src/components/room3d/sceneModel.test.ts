@@ -91,3 +91,40 @@ describe("real furniture models", () => {
     expect(fit.rotationY).toBeCloseTo(Math.PI / 2);
   });
 });
+
+describe("merged spaces", () => {
+  const studio = profile({
+    layout: { homeType: "studio", doorIntoLiving: true, openKitchen: true, bathrooms: 1, attachedBathroom: false, balcony: false, customRooms: [] },
+    rooms: ["living_room"],
+    concerns: { living_room: ["entry_step", "slippery_floor", "poor_lighting", "no_support_rail"] },
+  });
+
+  it("render as one room with a clear label and the merged rooms' furniture", () => {
+    const scene = buildRoomScene("living_room", studio, []);
+    expect(scene.label).toBe("Main room (living + sleeping + entrance + kitchenette)");
+    const keys = scene.furniture.map((b) => b.key);
+    expect(keys).toEqual(expect.arrayContaining(["sofa", "studio-bed", "kitchenette", "entry-shoe-rack"]));
+    // Issues from the merged entrance and kitchen show up in the same room.
+    expect(scene.issues.map((i) => i.concern)).toEqual(["entry_step", "slippery_floor", "poor_lighting", "no_support_rail"]);
+  });
+
+  it("keep merged furniture and markers inside the room and above the floor", () => {
+    const scene = buildRoomScene("living_room", studio, []);
+    for (const b of [...scene.furniture, ...scene.issues.flatMap((i) => i.boxes)]) {
+      const [x, y, z] = b.position;
+      const [w, h, d] = b.size;
+      expect(y - h / 2, `${b.key} below floor`).toBeGreaterThanOrEqual(-1e-9);
+      expect(Math.abs(x) + w / 2, `${b.key} outside x`).toBeLessThanOrEqual(ROOM_W / 2 + 1e-9);
+      expect(Math.abs(z) + d / 2, `${b.key} outside z`).toBeLessThanOrEqual(ROOM_D / 2 + 1e-9);
+    }
+  });
+
+  it("numbered rooms reuse their base layout with their own label", () => {
+    const p = profile({
+      layout: { homeType: "2bhk", doorIntoLiving: false, openKitchen: false, bathrooms: 1, attachedBathroom: false, balcony: true, customRooms: [] },
+      rooms: ["bedroom_2", "balcony"],
+    });
+    expect(buildRoomScene("bedroom_2", p, [])).toMatchObject({ type: "bedroom", label: "Bedroom 2" });
+    expect(buildRoomScene("balcony", p, [])).toMatchObject({ type: "balcony", label: "Balcony" });
+  });
+});

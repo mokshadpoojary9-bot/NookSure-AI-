@@ -63,6 +63,35 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe("3D room view — home layouts", () => {
+  it("shows merged spaces as one room with a clear label, and only this home's rooms", async () => {
+    localStorage.setItem(
+      "nooksure.planner.v1",
+      JSON.stringify({
+        version: 2,
+        step: 4,
+        profile: {
+          aids: [],
+          layout: { homeType: "1bhk", doorIntoLiving: true, openKitchen: true, bathrooms: 1, attachedBathroom: false, balcony: false, customRooms: [] },
+          rooms: ["living_room", "bathroom"],
+          concerns: { living_room: ["entry_step", "slippery_floor"], bathroom: ["slippery_floor"] },
+          notes: "",
+        },
+        done: [],
+      }),
+    );
+    webgl(true);
+    await openPlanWith3D();
+    const picker = await screen.findByRole("group", { name: "Room to show in 3D" });
+    expect(within(picker).getAllByRole("button").map((b) => b.textContent)).toEqual(["Living room + entrance + open kitchen", "Bathroom"]);
+    const issues = await screen.findByRole("list", { name: "Issues in the living room + entrance + open kitchen" });
+    expect(issues.textContent).toMatch(/Step at door/); // from the merged entrance
+    expect(issues.textContent).toMatch(/Slippery floor/); // from the open kitchen
+    // The checklist badge uses the same label.
+    expect(screen.getAllByText("Living room + entrance + open kitchen").length).toBeGreaterThan(1);
+  });
+});
+
 describe("3D room view", () => {
   it("is off by default and the toggle lazy-loads the 3D component", async () => {
     webgl(true);

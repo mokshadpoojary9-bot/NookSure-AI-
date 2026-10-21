@@ -1,7 +1,7 @@
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { ContactShadows, Environment, Html, Lightformer, OrbitControls, RoundedBox, useGLTF } from "@react-three/drei";
 import { Component, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { ROOM_LABELS, type Concern, type HomeProfile, type RoomType } from "@nooksure/shared";
+import type { Concern, HomeProfile, RoomId } from "@nooksure/shared";
 import {
   DOOR,
   STATUS_COLORS,
@@ -203,7 +203,7 @@ const prefersReducedMotion = () =>
   typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 interface Props {
-  room: RoomType;
+  room: RoomId;
   profile: HomeProfile;
   done: readonly string[];
   selected?: Concern | null;
@@ -215,7 +215,7 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
   const scene = useMemo(() => buildRoomScene(room, profile, done), [room, profile, done]);
   const webgl = useMemo(hasWebGL, []);
   const reducedMotion = useMemo(prefersReducedMotion, []);
-  const roomName = ROOM_LABELS[room];
+  const roomName = scene.label; // e.g. "Living room + entrance"
   const select = (c: Concern) => onSelect?.(c);
   // Contact shadows are baked once; re-bake when a model finishes loading so it gets a shadow too.
   const [modelsLoaded, setModelsLoaded] = useState(0);

@@ -10,6 +10,11 @@ const navigate = (hash: string) =>
 
 const click = (name: string | RegExp) => fireEvent.click(screen.getByRole("button", { name }));
 const check = (name: string | RegExp) => fireEvent.click(screen.getByRole("checkbox", { name }));
+/** "Your home" step: pick a home type (defaults for the other answers), then continue. */
+const chooseHome = (type: RegExp = /^1BHK/) => {
+  fireEvent.click(screen.getByRole("radio", { name: type }));
+  click("Continue");
+};
 
 beforeEach(() => {
   window.scrollTo = () => {}; // not implemented in jsdom
@@ -42,6 +47,7 @@ describe("planner workflow", () => {
 
     check("Wheelchair");
     click("Continue");
+    chooseHome();
 
     const next = screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement;
     expect(next.disabled).toBe(true);
@@ -76,6 +82,7 @@ describe("planner workflow", () => {
     render(<App />);
     navigate("#/plan");
     click("Continue");
+    chooseHome();
     check("Kitchen");
     click("Continue");
     click("Build my plan");
@@ -90,17 +97,93 @@ describe("planner workflow", () => {
     unmount();
 
     render(<App />);
-    expect(screen.getByRole("heading", { name: "Which rooms should we plan?" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Tell us about your home" })).toBeTruthy();
     click("Back");
     expect((screen.getByRole("checkbox", { name: "Walker / rollator" }) as HTMLInputElement).checked).toBe(true);
 
     click("Continue");
+    chooseHome();
     check("Bedroom");
     click("Continue");
     click("Build my plan");
     click("Start over");
     expect(screen.getByRole("heading", { name: "Who are you preparing the home for?" })).toBeTruthy();
     expect((screen.getByRole("checkbox", { name: "Walker / rollator" }) as HTMLInputElement).checked).toBe(false);
+  });
+
+  it("Your home: Continue waits for a home type; layout answers shape the room list", () => {
+    render(<App />);
+    navigate("#/plan");
+    click("Continue");
+    expect(screen.getByRole("group", { name: "What kind of home is it?" })).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText("Choose your type of home to continue.")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("radio", { name: /^1BHK/ }));
+    const door = within(screen.getByRole("group", { name: /main door open straight into the living room/ }));
+    fireEvent.click(door.getByRole("radio", { name: "Yes" }));
+    expect(screen.getByText(/Your rooms:/).parentElement?.textContent).toContain("Living room + entrance, Bedroom, Kitchen, Bathroom");
+    click("Continue");
+
+    // Only this home's rooms are offered.
+    const rooms = within(screen.getByRole("group", { name: "Rooms in your home" }));
+    expect(rooms.getAllByRole("checkbox").map((c) => c.closest("label")?.textContent)).toEqual([
+      "Living room + entrance",
+      "Bedroom",
+      "Kitchen",
+      "Bathroom",
+    ]);
+  });
+
+  it("2BHK with two bathrooms lists numbered rooms", () => {
+    render(<App />);
+    navigate("#/plan");
+    click("Continue");
+    fireEvent.click(screen.getByRole("radio", { name: /^2BHK/ }));
+    fireEvent.click(within(screen.getByRole("group", { name: "How many bathrooms?" })).getByRole("radio", { name: "2" }));
+    click("Continue");
+    const labels = within(screen.getByRole("group", { name: "Rooms in your home" }))
+      .getAllByRole("checkbox")
+      .map((c) => c.closest("label")?.textContent);
+    expect(labels).toEqual(["Entrance", "Living room", "Bedroom 1", "Bedroom 2", "Kitchen", "Bathroom 1", "Bathroom 2"]);
+  });
+
+  it("editing the home layout keeps room choices and observations that still apply", () => {
+    render(<App />);
+    navigate("#/plan");
+    click("Continue");
+    chooseHome();
+    check("Entrance");
+    check("Bedroom");
+    click("Continue");
+    fireEvent.click(within(screen.getByRole("group", { name: "Entrance" })).getByRole("checkbox", { name: /Step or raised threshold/ }));
+
+    // Back to "Your home": the door opens into the living room after all.
+    click("Back");
+    click("Back");
+    fireEvent.click(
+      within(screen.getByRole("group", { name: /main door open straight into the living room/ })).getByRole("radio", { name: "Yes" }),
+    );
+    click("Continue");
+    expect((screen.getByRole("checkbox", { name: "Living room + entrance" }) as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByRole("checkbox", { name: "Bedroom" }) as HTMLInputElement).checked).toBe(true);
+    click("Continue");
+    const living = within(screen.getByRole("group", { name: "Living room + entrance" }));
+    expect((living.getByRole("checkbox", { name: /Step or raised threshold/ }) as HTMLInputElement).checked).toBe(true);
+  });
+
+  it("opens a draft saved before home layouts existed at the same step, as a Custom home", () => {
+    localStorage.setItem(
+      "nooksure.planner.v1",
+      JSON.stringify({ step: 2, profile: { aids: [], rooms: ["kitchen"], concerns: {}, notes: "" }, done: [] }),
+    );
+    render(<App />);
+    navigate("#/plan");
+    expect(screen.getByRole("heading", { name: "What do you notice in each room?" })).toBeTruthy();
+    click("Back");
+    click("Back");
+    expect((screen.getByRole("radio", { name: /^Custom/ }) as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByRole("checkbox", { name: "Kitchen" }) as HTMLInputElement).checked).toBe(true);
   });
 
   it("ignores a corrupted saved draft", () => {

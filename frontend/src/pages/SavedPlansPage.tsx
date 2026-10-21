@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { PlanStoreError, deletePlan, getPlan, listPlans, type PlanSummary } from "../lib/plans";
 import { href } from "../router";
-import { saveState } from "../storage";
+import { PLAN_STEP, saveState, withLayout } from "../storage";
 
 const formatDate = (d: Date | null) =>
   d ? d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "Just now";
@@ -59,7 +59,8 @@ export function SavedPlansPage() {
         return;
       }
       // Load it into the existing planner view, linked to this saved copy.
-      saveState({ step: 3, profile: plan.profile, done: plan.done, title: plan.title, saved: { id, uid: user!.uid } });
+      // Older saved plans have no home layout: withLayout() gives them their own rooms as a Custom home.
+      saveState({ step: PLAN_STEP, profile: withLayout(plan.profile), done: plan.done, title: plan.title, saved: { id, uid: user!.uid } });
       window.location.hash = href("/plan");
     } catch (err) {
       setError(messageOf(err));

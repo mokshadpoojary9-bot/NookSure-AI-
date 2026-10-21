@@ -5,20 +5,27 @@ import {
   KIND_ORDER,
   MOBILITY_AID_LABELS,
   MobilityAidSchema,
-  ROOM_LABELS,
-  RoomTypeSchema,
+  applyLayout,
+  concernsFor,
   generatePlan,
+  spaceOf,
+  spacesOf,
   type Concern,
+  type HomeLayout,
   type HomeProfile,
   type MobilityAid,
   type PlanItem,
-  type RoomType,
+  type RoomId,
 } from "@nooksure/shared";
+import { HomeLayoutStep } from "../components/HomeLayoutStep";
 import { SavePlanPanel } from "../components/SavePlanPanel";
 import { LazyRoomView3D } from "../components/room3d/LazyRoomView3D";
-import { clearState, emptyState, loadState, saveState, type PlannerState } from "../storage";
+import { PLAN_STEP, clearState, emptyState, loadState, saveState, type PlannerState } from "../storage";
 
-const STEPS = ["Household", "Rooms", "Observations", "Your plan"] as const;
+const STEPS = ["Household", "Your home", "Rooms", "Observations", "Your plan"] as const;
+const HOME_STEP = 1;
+const ROOMS_STEP = 2;
+const OBSERVE_STEP = 3;
 
 const KIND_INTROS = {
   reuse: "Start here — use what is already in the home.",
@@ -52,7 +59,15 @@ export function PlannerPage() {
     headingRef.current?.focus();
   };
 
-  const canContinue = step === 1 ? profile.rooms.length > 0 : true;
+  // Editing the layout keeps selections that still apply (see applyLayout).
+  const setLayout = (layout: HomeLayout) =>
+    setState((s) => {
+      const next = applyLayout(s.profile, s.done, layout);
+      return { ...s, profile: next.profile, done: next.done };
+    });
+
+  const homeReady = Boolean(profile.layout) && spacesOf(profile).length > 0;
+  const canContinue = step === HOME_STEP ? homeReady : step === ROOMS_STEP ? profile.rooms.length > 0 : true;
 
   return (
     <div className="planner">
@@ -72,9 +87,10 @@ export function PlannerPage() {
 
       <section className="card step-panel" aria-labelledby="step-heading">
         {step === 0 && <HouseholdStep profile={profile} setProfile={setProfile} />}
-        {step === 1 && <RoomsStep profile={profile} setProfile={setProfile} />}
-        {step === 2 && <ObservationsStep profile={profile} setProfile={setProfile} />}
-        {step === 3 && (
+        {step === HOME_STEP && <HomeLayoutStep layout={profile.layout} onChange={setLayout} />}
+        {step === ROOMS_STEP && <RoomsStep profile={profile} setProfile={setProfile} />}
+        {step === OBSERVE_STEP && <ObservationsStep profile={profile} setProfile={setProfile} />}
+        {step === PLAN_STEP && (
           <PlanStep
             plan={plan}
             profile={profile}
@@ -82,7 +98,7 @@ export function PlannerPage() {
             onToggleDone={(id) => setState((s) => ({ ...s, done: toggle(s.done, id) }))}
           />
         )}
-        {step === 3 && (
+        {step === PLAN_STEP && (
           <SavePlanPanel
             title={state.title ?? "My home plan"}
             profile={profile}
@@ -99,12 +115,12 @@ export function PlannerPage() {
               Back
             </button>
           )}
-          {step < 3 && (
+          {step < PLAN_STEP && (
             <button type="button" className="button primary" disabled={!canContinue} onClick={() => goTo(step + 1)}>
-              {step === 2 ? "Build my plan" : "Continue"}
+              {step === OBSERVE_STEP ? "Build my plan" : "Continue"}
             </button>
           )}
-          {step === 3 && (
+          {step === PLAN_STEP && (
             <>
               <button type="button" className="button" onClick={() => window.print()}>
                 Print plan
@@ -115,7 +131,10 @@ export function PlannerPage() {
             </>
           )}
         </div>
-        {step === 1 && !canContinue && <p className="hint">Choose at least one room to continue.</p>}
+        {step === HOME_STEP && !canContinue && (
+          <p className="hint">{profile.layout ? "Pick at least one room to continue." : "Choose your type of home to continue."}</p>
+        )}
+        {step === ROOMS_STEP && !canContinue && <p className="hint">Choose at least one room to continue.</p>}
       </section>
     </div>
   );
@@ -164,16 +183,16 @@ function RoomsStep({ profile, setProfile }: StepProps) {
     <>
       <h2 id="step-heading">Which rooms should we plan?</h2>
       <fieldset>
-        <legend>Rooms</legend>
+        <legend>Rooms in your home</legend>
         <div className="chips">
-          {RoomTypeSchema.options.map((room: RoomType) => (
-            <label key={room} className="chip">
+          {spacesOf(profile).map((space) => (
+            <label key={space.id} className="chip">
               <input
                 type="checkbox"
-                checked={profile.rooms.includes(room)}
-                onChange={() => setProfile((p) => ({ ...p, rooms: toggle(p.rooms, room) }))}
+                checked={profile.rooms.includes(space.id)}
+                onChange={() => setProfile((p) => ({ ...p, rooms: toggle(p.rooms, space.id) }))}
               />
-              {ROOM_LABELS[room]}
+              {space.label}
             </label>
           ))}
         </div>
@@ -183,7 +202,7 @@ function RoomsStep({ profile, setProfile }: StepProps) {
 }
 
 function ObservationsStep({ profile, setProfile }: StepProps) {
-  const toggleConcern = (room: RoomType, concern: Concern) =>
+  const toggleConcern = (room: RoomId, concern: Concern) =>
     setProfile((p) => ({ ...p, concerns: { ...p.concerns, [room]: toggle(p.concerns[room] ?? [], concern) } }));
 
   return (
@@ -193,10 +212,8 @@ function ObservationsStep({ profile, setProfile }: StepProps) {
       <div className="room-grid">
         {profile.rooms.map((room) => (
           <fieldset key={room} className="room-card">
-            <legend>{ROOM_LABELS[room]}</legend>
-            {(Object.keys(CONCERNS) as Concern[])
-              .filter((c) => CONCERNS[c].rooms.includes(room))
-              .map((concern) => (
+            <legend>{spaceOf(profile, room).label}</legend>
+            {concernsFor(spaceOf(profile, room)).map((concern) => (
                 <label key={concern} className="check">
                   <input
                     type="checkbox"
@@ -214,7 +231,7 @@ function ObservationsStep({ profile, setProfile }: StepProps) {
 }
 
 interface Selection {
-  room: RoomType;
+  room: RoomId;
   concern: Concern;
 }
 
@@ -234,7 +251,7 @@ function PlanStep({
 }) {
   const completed = plan.filter((i) => done.includes(i.id)).length;
   const [show3D, setShow3D] = useState(false);
-  const [roomChoice, setRoomChoice] = useState<RoomType | null>(null);
+  const [roomChoice, setRoomChoice] = useState<RoomId | null>(null);
   const [selected, setSelected] = useState<Selection | null>(null);
 
   const rooms = profile.rooms;
@@ -300,7 +317,7 @@ function PlanStep({
                       aria-pressed={r === room}
                       onClick={() => setRoomChoice(r)}
                     >
-                      {ROOM_LABELS[r]}
+                      {spaceOf(profile, r).label}
                     </button>
                   ))}
                 </div>
@@ -309,12 +326,12 @@ function PlanStep({
                 room={room}
                 profile={profile}
                 done={done}
-                selected={selected?.room === room ? selected.concern : null}
+                selected={selected && selected.room === room ? selected.concern : null}
                 onSelect={selectFrom3D}
               />
               <p className="visually-hidden" aria-live="polite">
                 {selected && selectedCount > 0
-                  ? `${CONCERNS[selected.concern].label} in the ${ROOM_LABELS[selected.room].toLowerCase()}: ${selectedCount} checklist ${selectedCount === 1 ? "item" : "items"} highlighted.`
+                  ? `${CONCERNS[selected.concern].label} in the ${spaceOf(profile, selected.room).label.toLowerCase()}: ${selectedCount} checklist ${selectedCount === 1 ? "item" : "items"} highlighted.`
                   : ""}
               </p>
             </div>
@@ -339,6 +356,7 @@ function PlanStep({
                     <PlanItemCard
                       key={item.id}
                       item={item}
+                      roomLabel={spaceOf(profile, item.room).label}
                       done={done.includes(item.id)}
                       selected={isSelected(item)}
                       onSelect={() => selectFromList(item)}
@@ -359,12 +377,14 @@ const planItemDomId = (id: string) => `plan-item-${id.replace(/[^a-z0-9_-]/gi, "
 
 function PlanItemCard({
   item,
+  roomLabel,
   done,
   selected,
   onSelect,
   onToggle,
 }: {
   item: PlanItem;
+  roomLabel: string;
   done: boolean;
   selected: boolean;
   onSelect: () => void;
@@ -384,7 +404,7 @@ function PlanItemCard({
         <span className="plan-title">{item.title}</span>
       </label>
       <div className="plan-meta">
-        <span className="badge">{ROOM_LABELS[item.room]}</span>
+        <span className="badge">{roomLabel}</span>
         {item.seekProfessional && <span className="badge pro">Seek professional advice</span>}
       </div>
       <p>{item.detail}</p>

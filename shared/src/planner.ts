@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { RecommendationKindSchema, type RecommendationKind } from "./schemas";
+import { HomeLayoutSchema, RoomIdSchema, RoomTypeSchema, spaceOf, typesOf, type RoomSpace, type RoomType } from "./home";
 
 /**
  * Deterministic, rule-based planning catalog for the "Use What You Have"
@@ -14,8 +15,6 @@ export const KIND_ORDER: readonly RecommendationKind[] = RecommendationKindSchem
 export const MobilityAidSchema = z.enum(["wheelchair", "walker", "cane", "low_vision", "fall_risk"]);
 export type MobilityAid = z.infer<typeof MobilityAidSchema>;
 
-export const RoomTypeSchema = z.enum(["entrance", "living_room", "bedroom", "bathroom", "kitchen", "hallway_stairs"]);
-export type RoomType = z.infer<typeof RoomTypeSchema>;
 
 export const ConcernSchema = z.enum([
   "loose_rugs",
@@ -32,15 +31,18 @@ export type Concern = z.infer<typeof ConcernSchema>;
 
 export const HomeProfileSchema = z.object({
   aids: z.array(MobilityAidSchema),
-  rooms: z.array(RoomTypeSchema),
-  concerns: z.record(RoomTypeSchema, z.array(ConcernSchema)).default({}),
+  /** Rooms selected for planning (ids from the home layout, e.g. "bedroom_2"). */
+  rooms: z.array(RoomIdSchema),
+  concerns: z.record(RoomIdSchema, z.array(ConcernSchema)).default({}),
   notes: z.string().max(1000).default(""),
+  /** Older plans have none; see legacyLayout(). */
+  layout: HomeLayoutSchema.optional(),
 });
 export type HomeProfile = z.infer<typeof HomeProfileSchema>;
 
 export const PlanItemSchema = z.object({
   id: z.string(),
-  room: RoomTypeSchema,
+  room: RoomIdSchema,
   concern: ConcernSchema,
   kind: RecommendationKindSchema,
   title: z.string(),
@@ -58,15 +60,6 @@ export const MOBILITY_AID_LABELS: Record<MobilityAid, string> = {
   fall_risk: "Balance or fall risk",
 };
 
-export const ROOM_LABELS: Record<RoomType, string> = {
-  entrance: "Entrance",
-  living_room: "Living room",
-  bedroom: "Bedroom",
-  bathroom: "Bathroom",
-  kitchen: "Kitchen",
-  hallway_stairs: "Hallway & stairs",
-};
-
 export const KIND_LABELS: Record<RecommendationKind, string> = {
   reuse: "Reuse",
   rearrange: "Rearrange",
@@ -79,13 +72,13 @@ const ALL_ROOMS = RoomTypeSchema.options;
 export const CONCERNS: Record<Concern, { label: string; rooms: readonly RoomType[] }> = {
   loose_rugs: { label: "Loose rugs or mats on walking routes", rooms: ALL_ROOMS },
   clutter: { label: "Clutter on the floor or walkways", rooms: ALL_ROOMS },
-  narrow_path: { label: "Narrow path between furniture", rooms: ["entrance", "living_room", "bedroom", "kitchen", "hallway_stairs"] },
+  narrow_path: { label: "Narrow path between furniture", rooms: ["entrance", "living_room", "bedroom", "kitchen", "hallway_stairs", "balcony"] },
   trailing_cables: { label: "Trailing cables or extension cords", rooms: ["living_room", "bedroom", "kitchen", "hallway_stairs"] },
   poor_lighting: { label: "Dim lighting on routes or at night", rooms: ALL_ROOMS },
   out_of_reach: { label: "Everyday items stored too high or too low", rooms: ["bedroom", "bathroom", "kitchen", "living_room"] },
-  entry_step: { label: "Step or raised threshold at a doorway", rooms: ["entrance", "bathroom", "hallway_stairs"] },
+  entry_step: { label: "Step or raised threshold at a doorway", rooms: ["entrance", "bathroom", "hallway_stairs", "balcony"] },
   no_support_rail: { label: "No grab bar or handrail where support is needed", rooms: ["bathroom", "hallway_stairs", "entrance"] },
-  slippery_floor: { label: "Slippery or wet floor", rooms: ["bathroom", "kitchen", "entrance"] },
+  slippery_floor: { label: "Slippery or wet floor", rooms: ["bathroom", "kitchen", "entrance", "balcony"] },
 };
 
 interface Suggestion {
@@ -253,11 +246,18 @@ export const SUGGESTIONS: Record<Concern, readonly Suggestion[]> = {
  * Build a plan from a home profile. Items are ordered reuse → rearrange →
  * remove → purchase, then by the order the rooms were chosen.
  */
+/** Concerns that can apply to a space (any of its own or merged room types). */
+export function concernsFor(space: RoomSpace): Concern[] {
+  const types = typesOf(space);
+  return (Object.keys(CONCERNS) as Concern[]).filter((c) => CONCERNS[c].rooms.some((t) => types.includes(t)));
+}
+
 export function generatePlan(profile: HomeProfile): PlanItem[] {
   const items: PlanItem[] = [];
   for (const room of profile.rooms) {
+    const applicable = concernsFor(spaceOf(profile, room));
     for (const concern of profile.concerns[room] ?? []) {
-      if (!CONCERNS[concern].rooms.includes(room)) continue;
+      if (!applicable.includes(concern)) continue;
       for (const s of SUGGESTIONS[concern]) {
         if (s.aids && !s.aids.some((aid) => profile.aids.includes(aid))) continue;
         items.push({
