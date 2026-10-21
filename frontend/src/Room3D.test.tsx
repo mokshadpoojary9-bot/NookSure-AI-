@@ -9,7 +9,15 @@ vi.mock("@react-three/fiber", () => ({
     return <div data-testid="r3f-canvas" />;
   },
 }));
-vi.mock("@react-three/drei", () => ({ Html: () => null, OrbitControls: () => null }));
+vi.mock("@react-three/drei", () => ({
+  Html: () => null,
+  OrbitControls: () => null,
+  RoundedBox: () => null,
+  ContactShadows: () => null,
+  Environment: () => null,
+  Lightformer: () => null,
+  useGLTF: () => ({ scene: {} }),
+}));
 
 import { App } from "./App";
 

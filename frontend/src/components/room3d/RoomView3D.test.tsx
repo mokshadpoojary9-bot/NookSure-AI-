@@ -3,7 +3,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Never reached without WebGL; mocked so the test doesn't load all of three.js.
 vi.mock("@react-three/fiber", () => ({ Canvas: () => null }));
-vi.mock("@react-three/drei", () => ({ Html: () => null, OrbitControls: () => null }));
+vi.mock("@react-three/drei", () => ({
+  Html: () => null,
+  OrbitControls: () => null,
+  RoundedBox: () => null,
+  ContactShadows: () => null,
+  Environment: () => null,
+  Lightformer: () => null,
+  useGLTF: () => ({ scene: {} }),
+}));
 
 import RoomView3D from "./RoomView3D";
 

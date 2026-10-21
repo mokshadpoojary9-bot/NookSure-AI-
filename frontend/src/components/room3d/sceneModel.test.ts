@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { RoomTypeSchema, generatePlan, type HomeProfile } from "@nooksure/shared";
-import { CONCERN_PRIORITY, ROOM_D, ROOM_W, STATUS_COLORS, WALL_H, buildRoomScene } from "./sceneModel";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { CONCERN_PRIORITY, MODELS, ROOM_D, ROOM_W, STATUS_COLORS, WALL_H, buildRoomScene, fitModel } from "./sceneModel";
 
 const profile = (p: Partial<HomeProfile>): HomeProfile => ({ aids: [], rooms: [], concerns: {}, notes: "", ...p });
 
@@ -51,5 +53,41 @@ describe("buildRoomScene", () => {
         expect(Math.abs(z) + d / 2, `${room}/${b.key} outside z`).toBeLessThanOrEqual(ROOM_D / 2 + 1e-9);
       }
     }
+  });
+});
+
+describe("real furniture models", () => {
+  const empty = (room: (typeof RoomTypeSchema.options)[number]) => profile({ rooms: [room] });
+  const slots = RoomTypeSchema.options.flatMap((room) =>
+    buildRoomScene(room, empty(room), []).furniture.filter((b) => b.model).map((b) => ({ room, b })),
+  );
+
+  it("uses every registered model somewhere, and every model file ships in public/models", () => {
+    expect(new Set(slots.map((s) => s.b.model))).toEqual(new Set(Object.keys(MODELS)));
+    for (const { file } of Object.values(MODELS)) {
+      // Tests run from frontend/ (npm workspaces); also allow running from the repo root.
+      const candidates = [resolve("public/models", file), resolve("frontend/public/models", file)];
+      expect(candidates.some(existsSync), `missing ${file}`).toBe(true);
+    }
+  });
+
+  it("fits each model inside its slot and the room, on the floor, at a sensible scale", () => {
+    for (const { room, b } of slots) {
+      const fit = fitModel(b, b.model!);
+      const where = `${room}/${b.key}`;
+      expect(fit.scale, `${where} scale`).toBeGreaterThan(0.5);
+      expect(fit.scale, `${where} scale`).toBeLessThan(1.3);
+      fit.size.forEach((v, i) => expect(v, `${where} size[${i}]`).toBeLessThanOrEqual(b.size[i]! + 1e-9));
+      expect(fit.position[1], `${where} floor`).toBe(0);
+      expect(Math.abs(fit.position[0]) + fit.size[0] / 2, `${where} x`).toBeLessThanOrEqual(ROOM_W / 2);
+      expect(Math.abs(fit.position[2]) + fit.size[2] / 2, `${where} z`).toBeLessThanOrEqual(ROOM_D / 2);
+    }
+  });
+
+  it("keeps the coffee table at its original scale and orientation", () => {
+    const table = slots.find((s) => s.b.model === "coffee-table")!.b;
+    const fit = fitModel(table, "coffee-table");
+    expect(fit.scale).toBeCloseTo(1, 2);
+    expect(fit.rotationY).toBeCloseTo(Math.PI / 2);
   });
 });

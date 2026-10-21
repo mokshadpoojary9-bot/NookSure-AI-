@@ -1,55 +1,191 @@
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
-import { Html, OrbitControls } from "@react-three/drei";
-import { useMemo } from "react";
+import { ContactShadows, Environment, Html, Lightformer, OrbitControls, RoundedBox, useGLTF } from "@react-three/drei";
+import { Component, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ROOM_LABELS, type Concern, type HomeProfile, type RoomType } from "@nooksure/shared";
-import { DOOR, STATUS_COLORS, STATUS_LABELS, buildRoomScene, type Box, type IssueStatus, type RoomScene } from "./sceneModel";
+import {
+  DOOR,
+  STATUS_COLORS,
+  STATUS_LABELS,
+  MODELS,
+  buildRoomScene,
+  fitModel,
+  type Box,
+  type IssueStatus,
+  type ModelId,
+  type RoomScene,
+} from "./sceneModel";
 
-const WALL = "#d9d4c7";
-const FLOOR = "#c9bfae";
+const WALL = "#e7e1d6";
+const WALL_SIDE = "#ded7ca";
+const SKIRTING = "#f6f3ee";
 const WALL_T = 0.08;
 
 export const UNSUPPORTED_MESSAGE = "3D view isn't supported on this device.";
 
-function Mesh({ b, onSelect }: { b: Box; onSelect?: () => void }) {
-  const click = onSelect
-    ? (e: ThreeEvent<MouseEvent>) => {
-        e.stopPropagation();
-        onSelect();
+// Served from /public/models (see MODELS in sceneModel.ts).
+const modelUrl = (id: ModelId) => `${import.meta.env.BASE_URL}models/${MODELS[id].file}`;
+
+/** Wood-plank floor drawn on a canvas at runtime — no image download. */
+function usePlankCanvas() {
+  return useMemo(() => {
+    const c = document.createElement("canvas");
+    c.width = 512;
+    c.height = 512;
+    const g = c.getContext("2d");
+    if (!g) return null;
+    const planks = 6;
+    const h = c.height / planks;
+    for (let i = 0; i < planks; i++) {
+      const tone = 196 + ((i * 37) % 5) * 5;
+      g.fillStyle = `rgb(${tone}, ${tone - 30}, ${tone - 62})`;
+      g.fillRect(0, i * h, c.width, h);
+      // Stagger the plank ends.
+      g.fillStyle = "rgba(90, 60, 30, 0.25)";
+      g.fillRect(((i * 211) % 512), i * h, 2, h);
+      g.fillRect(0, i * h, c.width, 2);
+    }
+    return c;
+  }, []);
+}
+
+const REPEAT_WRAPPING = 1000; // THREE.RepeatWrapping (R3F disposes the texture on unmount)
+
+interface MeshProps {
+  b: Box;
+  onSelect?: () => void;
+  /** Glow colour when hovered or selected (issue objects only). */
+  glow?: string;
+  highlighted?: boolean;
+}
+
+function Mesh({ b, onSelect, glow, highlighted = false }: MeshProps) {
+  const [hovered, setHovered] = useState(false);
+  const lit = Boolean(glow) && (highlighted || hovered);
+  const material = (
+    <meshStandardMaterial
+      color={b.color}
+      roughness={b.opacity !== undefined ? 0.1 : 0.78}
+      metalness={0}
+      transparent={b.opacity !== undefined}
+      opacity={b.opacity ?? 1}
+      emissive={lit ? glow : "#000000"}
+      emissiveIntensity={lit ? (highlighted ? 0.55 : 0.3) : 0}
+    />
+  );
+  const handlers = onSelect
+    ? {
+        onClick: (e: ThreeEvent<MouseEvent>) => {
+          e.stopPropagation();
+          onSelect();
+        },
+        onPointerOver: (e: ThreeEvent<PointerEvent>) => {
+          e.stopPropagation();
+          setHovered(true);
+          document.body.style.cursor = "pointer";
+        },
+        onPointerOut: () => {
+          setHovered(false);
+          document.body.style.cursor = "";
+        },
       }
-    : undefined;
-  return (
-    <mesh
-      position={b.position}
-      onClick={click}
-      onPointerOver={onSelect ? () => (document.body.style.cursor = "pointer") : undefined}
-      onPointerOut={onSelect ? () => (document.body.style.cursor = "") : undefined}
-    >
+    : {};
+  // RoundedBox needs a radius smaller than half the thinnest side.
+  const radius = b.radius ? Math.min(b.radius, Math.min(...b.size) / 2 - 0.002) : 0;
+  return radius > 0.004 ? (
+    <RoundedBox args={b.size} radius={radius} smoothness={3} position={b.position} {...handlers}>
+      {material}
+    </RoundedBox>
+  ) : (
+    <mesh position={b.position} {...handlers}>
       <boxGeometry args={b.size} />
-      <meshStandardMaterial color={b.color} roughness={0.85} />
+      {material}
     </mesh>
   );
 }
 
+/** A model scaled uniformly to fit its layout box, turned by rotationY, standing on the floor. */
+function FittedModel({ b, id, onReady }: { b: Box; id: ModelId; onReady?: () => void }) {
+  // useDraco=false: these files aren't Draco-compressed, so never fetch a decoder from a CDN.
+  const { scene } = useGLTF(modelUrl(id), false);
+  const object = useMemo(() => scene.clone(true), [scene]);
+  useEffect(() => onReady?.(), [object, onReady]);
+
+  const fit = fitModel(b, id);
+  return <primitive object={object} position={fit.position} rotation={[0, fit.rotationY, 0]} scale={fit.scale} />;
+}
+
+/** If a model can't load (missing file, old browser), keep the simple box instead. */
+class ModelBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+function Furniture({ b, onModelReady }: { b: Box; onModelReady?: () => void }) {
+  if (b.model) {
+    const box = <Mesh b={b} />;
+    return (
+      <ModelBoundary fallback={box}>
+        <Suspense fallback={box}>
+          <FittedModel b={b} id={b.model} onReady={onModelReady} />
+        </Suspense>
+      </ModelBoundary>
+    );
+  }
+  return <Mesh b={b} />;
+}
+
 function Shell({ scene }: { scene: RoomScene }) {
   const { width: w, depth: d, wallHeight: h } = scene;
+  const planks = usePlankCanvas();
   const doorFront = DOOR.z + DOOR.width / 2; // door gap spans [DOOR.z - w/2, DOOR.z + w/2]
   const doorBack = DOOR.z - DOOR.width / 2;
   const leftBackLen = doorBack + d / 2;
   const leftFrontLen = d / 2 - doorFront;
-  const wall = (key: string, position: [number, number, number], size: [number, number, number]) => (
-    <Mesh key={key} b={{ key, position, size, color: WALL }} />
+  const part = (key: string, position: [number, number, number], size: [number, number, number], color: string) => (
+    <Mesh key={key} b={{ key, position, size, color }} />
   );
+  const skirt = 0.1;
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
         <planeGeometry args={[w, d]} />
-        <meshStandardMaterial color={FLOOR} roughness={1} />
+        <meshStandardMaterial color={planks ? "#ffffff" : "#c9bfae"} roughness={0.9}>
+          {planks && (
+            <canvasTexture
+              attach="map"
+              args={[planks]}
+              colorSpace="srgb"
+              wrapS={REPEAT_WRAPPING}
+              wrapT={REPEAT_WRAPPING}
+              repeat-x={w / 2}
+              repeat-y={d / 2}
+              anisotropy={4}
+            />
+          )}
+        </meshStandardMaterial>
       </mesh>
-      {wall("back", [0, h / 2, -d / 2], [w, h, WALL_T])}
-      {wall("right", [w / 2, h / 2, 0], [WALL_T, h, d])}
-      {wall("left-back", [-w / 2, h / 2, -d / 2 + leftBackLen / 2], [WALL_T, h, leftBackLen])}
-      {wall("left-front", [-w / 2, h / 2, d / 2 - leftFrontLen / 2], [WALL_T, h, leftFrontLen])}
-      {wall("lintel", [-w / 2, h - 0.25, DOOR.z], [WALL_T, 0.5, DOOR.width])}
+      {part("back", [0, h / 2, -d / 2], [w, h, WALL_T], WALL)}
+      {part("right", [w / 2, h / 2, 0], [WALL_T, h, d], WALL_SIDE)}
+      {part("left-back", [-w / 2, h / 2, -d / 2 + leftBackLen / 2], [WALL_T, h, leftBackLen], WALL_SIDE)}
+      {part("left-front", [-w / 2, h / 2, d / 2 - leftFrontLen / 2], [WALL_T, h, leftFrontLen], WALL_SIDE)}
+      {part("lintel", [-w / 2, h - 0.25, DOOR.z], [WALL_T, 0.5, DOOR.width], WALL_SIDE)}
+      {/* Skirting boards */}
+      {part("skirt-back", [0, skirt / 2, -d / 2 + WALL_T / 2 + 0.01], [w - WALL_T, skirt, 0.02], SKIRTING)}
+      {part("skirt-right", [w / 2 - WALL_T / 2 - 0.01, skirt / 2, 0], [0.02, skirt, d], SKIRTING)}
+      {part("skirt-left-back", [-w / 2 + WALL_T / 2 + 0.01, skirt / 2, -d / 2 + leftBackLen / 2], [0.02, skirt, leftBackLen], SKIRTING)}
+      {part("skirt-left-front", [-w / 2 + WALL_T / 2 + 0.01, skirt / 2, d / 2 - leftFrontLen / 2], [0.02, skirt, leftFrontLen], SKIRTING)}
+      {/* Window on the back wall: frame + softly glowing pane */}
+      {part("window-frame", [0.45, 1.7, -d / 2 + WALL_T / 2 + 0.005], [1.3, 0.95, 0.03], SKIRTING)}
+      <mesh position={[0.45, 1.7, -d / 2 + WALL_T / 2 + 0.025]}>
+        <planeGeometry args={[1.16, 0.81]} />
+        <meshStandardMaterial color="#dbeef5" emissive="#dbeef5" emissiveIntensity={0.6} roughness={0.2} />
+      </mesh>
+      {part("window-mullion", [0.45, 1.7, -d / 2 + WALL_T / 2 + 0.03], [0.03, 0.81, 0.01], SKIRTING)}
     </group>
   );
 }
@@ -81,6 +217,9 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
   const reducedMotion = useMemo(prefersReducedMotion, []);
   const roomName = ROOM_LABELS[room];
   const select = (c: Concern) => onSelect?.(c);
+  // Contact shadows are baked once; re-bake when a model finishes loading so it gets a shadow too.
+  const [modelsLoaded, setModelsLoaded] = useState(0);
+  const onModelReady = useCallback(() => setModelsLoaded((n) => n + 1), []);
 
   return (
     <figure className="room3d">
@@ -90,40 +229,72 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
           role="img"
           aria-label={`Illustrative 3D view of the ${roomName.toLowerCase()} with ${scene.issues.length} highlighted issues. The same issues are listed below.`}
         >
+          <span className="room3d-chip" aria-hidden="true">
+            {roomName}
+          </span>
           <Canvas
             frameloop="demand"
             dpr={[1, 1.5]}
-            camera={{ position: [0, 4.6, 7.2], fov: 45, near: 0.1, far: 50 }}
+            camera={{ position: [0.4, 4.4, 7.4], fov: 42, near: 0.1, far: 50 }}
             gl={{ antialias: true, powerPreference: "low-power" }}
           >
-            <color attach="background" args={["#eef1ee"]} />
-            <hemisphereLight args={["#ffffff", "#b9ad98", 0.9]} />
-            <ambientLight intensity={0.35} />
-            <directionalLight position={[3, 6, 4]} intensity={0.8} />
+            <color attach="background" args={["#f3f1ec"]} />
+            <fog attach="fog" args={["#f3f1ec", 12, 22]} />
+            <hemisphereLight args={["#ffffff", "#c8b9a2", 0.55]} />
+            <directionalLight position={[3.5, 6, 4]} intensity={1.05} color="#fff6ea" />
+            <directionalLight position={[-4, 3, 2]} intensity={0.25} color="#dfe8ff" />
+            {/* Soft studio reflections, rendered once locally (no HDR download). */}
+            <Environment resolution={64} frames={1}>
+              <Lightformer form="rect" intensity={1.6} position={[0, 4, 2]} scale={[8, 3, 1]} rotation-x={Math.PI / 2} />
+              <Lightformer form="rect" intensity={0.6} position={[-5, 2, 0]} scale={[3, 3, 1]} rotation-y={Math.PI / 2} />
+              <Lightformer form="rect" intensity={0.6} position={[5, 2, 0]} scale={[3, 3, 1]} rotation-y={-Math.PI / 2} />
+            </Environment>
 
             <Shell scene={scene} />
             {scene.furniture.map((b) => (
-              <Mesh key={b.key} b={b} />
+              <Furniture key={b.key} b={b} onModelReady={onModelReady} />
             ))}
-            {scene.issues.map((issue) => (
-              <group key={issue.concern}>
-                {issue.boxes.map((b) => (
-                  <Mesh key={b.key} b={b} onSelect={() => select(issue.concern)} />
-                ))}
-                <Html position={issue.labelAt} center zIndexRange={[20, 0]}>
-                  {/* Mouse/touch shortcut only; keyboard users use the list below. */}
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    className={`room3d-label status-${issue.status}${selected === issue.concern ? " selected" : ""}`}
-                    onClick={() => select(issue.concern)}
-                  >
-                    {issue.label}
-                  </button>
-                </Html>
-              </group>
-            ))}
+            {scene.issues.map((issue) => {
+              const isSelected = selected === issue.concern;
+              const color = STATUS_COLORS[issue.status];
+              return (
+                <group key={issue.concern}>
+                  {issue.boxes.map((b) => (
+                    <Mesh key={b.key} b={b} glow={color} highlighted={isSelected} onSelect={() => select(issue.concern)} />
+                  ))}
+                  {/* Floor ring marking the issue */}
+                  <mesh rotation={[-Math.PI / 2, 0, 0]} position={[issue.labelAt[0], 0.012, issue.labelAt[2]]}>
+                    <ringGeometry args={[isSelected ? 0.34 : 0.3, isSelected ? 0.44 : 0.38, 40]} />
+                    <meshBasicMaterial color={color} transparent opacity={isSelected ? 0.85 : 0.5} toneMapped={false} />
+                  </mesh>
+                  <Html position={issue.labelAt} center zIndexRange={[20, 0]}>
+                    {/* Mouse/touch shortcut only; keyboard users use the list below. */}
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      aria-hidden="true"
+                      className={`room3d-label status-${issue.status}${isSelected ? " selected" : ""}`}
+                      onClick={() => select(issue.concern)}
+                    >
+                      <span className="room3d-dot" style={{ background: color }} />
+                      {issue.label}
+                    </button>
+                  </Html>
+                </group>
+              );
+            })}
+
+            {/* Soft grounding shadow, baked once per room. */}
+            <ContactShadows
+              key={`${room}-${modelsLoaded}`}
+              position={[0, 0.006, 0]}
+              scale={[scene.width, scene.depth]}
+              resolution={512}
+              blur={2.6}
+              opacity={0.38}
+              far={2.6}
+              frames={1}
+            />
 
             <OrbitControls
               makeDefault
