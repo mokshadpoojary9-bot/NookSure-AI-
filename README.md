@@ -12,10 +12,17 @@ needs — starting with what they already own.
 
 ## Features
 
-- **"Use What You Have" planner** — pick mobility aids, rooms and what you notice;
-  get a checklist ordered **reuse → rearrange → remove → purchase**. Built from a
+- **"Your home" setup** — Studio/1RK, 1BHK, 2BHK, 3BHK or Custom, plus layout
+  questions (door into the living room, open kitchen, bathrooms, attached bathroom,
+  balcony, garden/outdoor area and steps). Rooms are generated from the answers;
+  merged spaces like "Living room + open kitchen" are handled.
+- **"Use What You Have" planner** — pick mobility aids, rooms, the furniture you
+  already have and what you notice; get a checklist ordered **reuse → rearrange →
+  remove → purchase**, with advice about your own furniture first. Built from a
   reviewed rule set and labeled as such (not AI analysis). Never suggests furniture
-  as grab bars or stacked objects as ramps.
+  as grab bars, stacked objects as ramps, or an ordinary stool as a shower seat.
+- **Garden / outdoor areas** — paths, steps, gravel, moss, low branches and lighting;
+  handrails and ramps are always purpose-built and professionally installed.
 - **Gemini assistant** — ask questions about preparing your home. Runs server-side
   (the key never reaches the browser), with input validation, timeouts, rate limits
   and an urgent-hazard notice. Without a key it runs in clearly labeled demo mode.
@@ -25,10 +32,14 @@ needs — starting with what they already own.
 - **Google sign-in** — optional, via Firebase Authentication. Guest mode keeps working.
 - **Saved plans** — signed-in users can save, reopen and delete plans in Firestore
   (`users/{uid}/plans/{planId}`), protected by owner-only security rules.
-- **3D room view** — an interactive Three.js view of each room with issues coloured
-  by priority (red high, amber medium, green done); click an object to find its
-  checklist item. **Illustrative layout, not to scale.** Lazy-loaded, with a
-  checklist fallback where WebGL isn't available.
+- **3D room view** — an interactive Three.js view of each room showing the furniture
+  you said you have (35 credited CC0 / CC-BY models, simple shapes otherwise), issues
+  coloured by priority (red high, amber medium, green done) and readable in-scene
+  labels; click a label or object to find its checklist item. Toggleable overlays: a
+  1.5 m turning circle, the walking route from the door, grab bar zones (install by a
+  professional), non-slip zones and a night-light path. **Illustrative layout, not to
+  scale.** Lazy-loaded, with a checklist fallback where WebGL isn't available. Model
+  credits: the in-app **Credits** page.
 
 ## Tech stack
 

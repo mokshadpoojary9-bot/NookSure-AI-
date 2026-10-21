@@ -1326,3 +1326,172 @@ textarea:focus {
   padding-left: 18px;
   font-size: 0.9rem;
 }
+
+/* ==========================================================================
+   Landing page + cross-page polish (Phase 5) — presentation only
+   ========================================================================== */
+.hero-headline {
+  margin: 10px 0 4px;
+  max-width: 22ch;
+  font-size: clamp(1.7rem, 4.2vw, 2.6rem);
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.hero h1 {
+  font-size: clamp(1.1rem, 2.4vw, 1.35rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--accent);
+}
+.hero .tagline {
+  margin-top: 6px;
+}
+
+.preview {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 28px;
+  align-items: center;
+}
+.preview-stage .badge {
+  margin: 0 0 8px;
+}
+.preview-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  min-height: 240px;
+  border-radius: 20px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--border));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 70%, transparent), transparent),
+    var(--surface);
+  font-size: 2.6rem;
+}
+
+.how:focus {
+  outline: none;
+}
+.how-steps {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+  counter-reset: none;
+}
+.how-step h3 {
+  margin: 10px 0 6px;
+}
+.how-step p {
+  margin: 0;
+  color: var(--muted);
+}
+.how-num {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+.order-title {
+  margin-top: 28px;
+}
+
+.feature-grid,
+.audience-grid {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.feature-grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+.feature {
+  transition: transform 0.2s var(--ease, ease), box-shadow 0.2s var(--ease, ease);
+}
+.feature:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+.feature-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  font-size: 1.4rem;
+}
+.feature h3 {
+  margin: 12px 0 6px;
+}
+.feature p {
+  margin: 0;
+  color: var(--muted);
+}
+.audience-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+.audience {
+  padding: 16px 18px;
+  border-left: 4px solid var(--accent);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.audience h3 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+}
+.audience p {
+  margin: 0;
+  color: var(--muted);
+}
+.safety-callout {
+  border-left: 4px solid var(--warn-border);
+  background: linear-gradient(180deg, var(--surface), color-mix(in srgb, var(--warn-bg) 55%, var(--surface)));
+}
+.safety-callout h2 {
+  margin-top: 0;
+}
+
+/* Consistent page intros on inner pages */
+.prose h1,
+.planner > h1,
+.assistant > h1,
+.saved-plans > h1 {
+  font-size: clamp(1.9rem, 4.4vw, 2.6rem);
+  margin-bottom: 8px;
+}
+.prose a,
+.safety-callout a {
+  text-underline-offset: 3px;
+}
+.site-footer {
+  margin-top: 24px;
+}
+.footer-links a {
+  color: var(--muted);
+  font-weight: 600;
+}
+.footer-links a:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 720px) {
+  .preview {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .feature:hover {
+    transform: none;
+  }
+}
