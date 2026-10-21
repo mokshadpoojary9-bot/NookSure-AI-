@@ -127,6 +127,32 @@ describe("3D room view — furniture and labels", () => {
   });
 });
 
+describe("3D room view — garden", () => {
+  it("offers the outdoor area in the room picker with its label", async () => {
+    localStorage.setItem(
+      "nooksure.planner.v1",
+      JSON.stringify({
+        version: 3,
+        step: 5,
+        profile: {
+          aids: [],
+          layout: { homeType: "1bhk", garden: true, gardenType: "courtyard", gardenSteps: true },
+          rooms: ["living_room", "garden"],
+          concerns: { living_room: ["clutter"], garden: ["uneven_ground"] },
+          notes: "",
+        },
+        done: [],
+      }),
+    );
+    webgl(true);
+    await openPlanWith3D();
+    const picker = await screen.findByRole("group", { name: "Room to show in 3D" });
+    fireEvent.click(within(picker).getByRole("button", { name: "Garden / Outdoor (Courtyard)" }));
+    const issues = await screen.findByRole("list", { name: "Issues in the garden / outdoor (courtyard)" });
+    expect(issues.textContent).toMatch(/Uneven ground — High priority/);
+  });
+});
+
 describe("3D room view", () => {
   it("is off by default and the toggle lazy-loads the 3D component", async () => {
     webgl(true);

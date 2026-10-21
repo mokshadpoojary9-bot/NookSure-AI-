@@ -4,6 +4,8 @@ import { Component, Suspense, useCallback, useEffect, useMemo, useState, type Re
 import type { Concern, HomeProfile, RoomId } from "@nooksure/shared";
 import {
   DOOR,
+  GARDEN_PATH,
+  GARDEN_STEPS_DEPTH,
   STATUS_COLORS,
   STATUS_LABELS,
   MODELS,
@@ -139,6 +141,66 @@ function Furniture({ b, onModelReady }: { b: Box; onModelReady?: () => void }) {
   return <Mesh b={b} />;
 }
 
+/** Grass drawn on a canvas at runtime — no image download. */
+function useGrassCanvas() {
+  return useMemo(() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 256;
+    const g = c.getContext("2d");
+    if (!g) return null;
+    g.fillStyle = "#7fa865";
+    g.fillRect(0, 0, 256, 256);
+    // Deterministic speckle so the grass has some texture.
+    for (let i = 0; i < 1400; i++) {
+      const x = (i * 73) % 256;
+      const y = (i * 151 + (i >> 3) * 17) % 256;
+      g.fillStyle = i % 3 === 0 ? "#6b9655" : i % 3 === 1 ? "#8cb571" : "#76a05e";
+      g.fillRect(x, y, 2, 3);
+    }
+    return c;
+  }, []);
+}
+
+/** Garden: open area with grass, a paved path, the house wall with a door, and steps if there are any. */
+function OutdoorShell({ scene }: { scene: RoomScene }) {
+  const { width: w, depth: d, wallHeight: h } = scene;
+  const grass = useGrassCanvas();
+  const steps = scene.outdoor?.steps ?? false;
+  const doorW = 1.0;
+  const doorH = 2.0;
+  const wallZ = -d / 2;
+  const part = (key: string, position: [number, number, number], size: [number, number, number], color: string, radius = 0) => (
+    <Mesh key={key} b={{ key, position, size, color, radius }} />
+  );
+  const pathStart = wallZ + (steps ? GARDEN_STEPS_DEPTH : 0.04);
+  const pathLen = d / 2 - pathStart;
+  return (
+    <group>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+        <planeGeometry args={[w, d]} />
+        <meshStandardMaterial color={grass ? "#ffffff" : "#7fa865"} roughness={1}>
+          {grass && <canvasTexture attach="map" args={[grass]} colorSpace="srgb" wrapS={1000} wrapT={1000} repeat-x={w} repeat-y={d} />}
+        </meshStandardMaterial>
+      </mesh>
+      {/* Paved path from the door to the front */}
+      {part("path", [GARDEN_PATH.x, 0.006, pathStart + pathLen / 2], [GARDEN_PATH.width, 0.012, pathLen], "#c9c3b8")}
+      {/* House wall with door and two windows */}
+      {part("house-left", [-(w / 4 + doorW / 4), h / 2, wallZ], [w / 2 - doorW / 2, h, 0.12], "#d8c7b2")}
+      {part("house-right", [w / 4 + doorW / 4, h / 2, wallZ], [w / 2 - doorW / 2, h, 0.12], "#d8c7b2")}
+      {part("house-lintel", [0, (h + doorH) / 2, wallZ], [doorW, h - doorH, 0.12], "#d8c7b2")}
+      {part("door", [0, doorH / 2 + (steps ? 0.45 : 0), wallZ + 0.01], [doorW - 0.08, doorH - (steps ? 0.45 : 0), 0.06], "#7a5a43")}
+      {part("window-l", [-1.8, 1.55, wallZ + 0.07], [1.0, 0.8, 0.03], "#dbeef5")}
+      {part("window-r", [1.8, 1.55, wallZ + 0.07], [1.0, 0.8, 0.03], "#dbeef5")}
+      {steps &&
+        [0, 1, 2].map((i) => {
+          // Three steps down from the door, each 0.15 high and 0.2 deep.
+          const height = 0.15 * (3 - i);
+          return part(`step-${i}`, [0, height / 2, wallZ + 0.06 + 0.2 * i + 0.1], [1.2, height, 0.2], "#bdb6aa", 0.01);
+        })}
+    </group>
+  );
+}
+
 function Shell({ scene }: { scene: RoomScene }) {
   const { width: w, depth: d, wallHeight: h } = scene;
   const planks = usePlankCanvas();
@@ -239,8 +301,8 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
             camera={{ position: [0.4, 4.4, 7.4], fov: 42, near: 0.1, far: 50 }}
             gl={{ antialias: true, powerPreference: "low-power" }}
           >
-            <color attach="background" args={["#f3f1ec"]} />
-            <fog attach="fog" args={["#f3f1ec", 12, 22]} />
+            <color attach="background" args={[scene.outdoor ? "#e3eef5" : "#f3f1ec"]} />
+            <fog attach="fog" args={[scene.outdoor ? "#e3eef5" : "#f3f1ec", 12, 22]} />
             <hemisphereLight args={["#ffffff", "#c8b9a2", 0.55]} />
             <directionalLight position={[3.5, 6, 4]} intensity={1.05} color="#fff6ea" />
             <directionalLight position={[-4, 3, 2]} intensity={0.25} color="#dfe8ff" />
@@ -251,7 +313,7 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
               <Lightformer form="rect" intensity={0.6} position={[5, 2, 0]} scale={[3, 3, 1]} rotation-y={-Math.PI / 2} />
             </Environment>
 
-            <Shell scene={scene} />
+            {scene.outdoor ? <OutdoorShell scene={scene} /> : <Shell scene={scene} />}
             {scene.furniture.map((b) => (
               <Furniture key={b.key} b={b} onModelReady={onModelReady} />
             ))}

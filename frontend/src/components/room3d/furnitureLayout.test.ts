@@ -74,3 +74,13 @@ describe("furniture layout", () => {
     expect(furnitureBoxes("hallway_stairs", ["rug"])).toBeNull();
   });
 });
+
+describe("garden layout", () => {
+  const boxes = furnitureBoxes("garden", allItems("garden"))!;
+  it("keeps the paved path and the steps by the door clear", () => {
+    // Path: x -0.5..0.5 from the house wall to the front (steps included).
+    const path = { position: [0, 0.5, 0], size: [1.0, 1, 5] } as unknown as FurnitureBox;
+    for (const b of boxes.filter((x) => x.support === "floor" || x.support === "flat"))
+      expect(overlap(b, path), `${b.key} is on the path`).toBe(false);
+  });
+});

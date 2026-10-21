@@ -1,6 +1,8 @@
 import { useId } from "react";
 import {
   CUSTOM_ROOM_CHOICES,
+  GARDEN_TYPE_LABELS,
+  GardenTypeSchema,
   HOME_TYPE_HINTS,
   HOME_TYPE_LABELS,
   HomeLayoutSchema,
@@ -37,6 +39,7 @@ function YesNo({ legend, value, onChange }: { legend: string; value: boolean; on
 export function HomeLayoutStep({ layout, onChange }: Props) {
   const typeName = useId();
   const bathName = useId();
+  const gardenName = useId();
   const set = (patch: Partial<HomeLayout>) => layout && onChange(HomeLayoutSchema.parse({ ...layout, ...patch }));
 
   const pickType = (homeType: HomeType) => {
@@ -130,6 +133,32 @@ export function HomeLayoutStep({ layout, onChange }: Props) {
                 />
               )}
               <YesNo legend="Is there a balcony?" value={layout.balcony} onChange={(balcony) => set({ balcony })} />
+            </>
+          )}
+
+          <YesNo
+            legend="Do you have a garden, yard, terrace, or outdoor area?"
+            value={layout.garden}
+            onChange={(garden) => set({ garden })}
+          />
+          {layout.garden && (
+            <>
+              <fieldset className="question">
+                <legend>What kind of outdoor area?</legend>
+                <div className="chips">
+                  {GardenTypeSchema.options.map((g) => (
+                    <label key={g} className="chip">
+                      <input type="radio" name={gardenName} checked={layout.gardenType === g} onChange={() => set({ gardenType: g })} />
+                      {GARDEN_TYPE_LABELS[g]}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <YesNo
+                legend="Are there steps between the house and the outdoor area?"
+                value={layout.gardenSteps}
+                onChange={(gardenSteps) => set({ gardenSteps })}
+              />
             </>
           )}
 

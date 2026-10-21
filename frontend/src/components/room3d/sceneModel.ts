@@ -1,6 +1,7 @@
 import {
   concernsFor,
   generatePlan,
+  layoutOf,
   spaceOf,
   type Concern,
   type FurnitureItem,
@@ -119,7 +120,13 @@ export interface RoomScene {
   labels: SceneLabel[];
   /** True when the furniture comes from the user's answers rather than the default layout. */
   fromAnswers: boolean;
+  /** Outdoor area (garden): open space with a house wall, door and path; steps if the user said so. */
+  outdoor?: { steps: boolean };
 }
+
+/** Garden: door in the middle of the house wall (back), paved path from it to the front. */
+export const GARDEN_PATH = { x: 0, width: 1.0 };
+export const GARDEN_STEPS_DEPTH = 0.6;
 
 export interface SceneLabel {
   id: string;
@@ -142,6 +149,12 @@ export const SCENE_TEXT: Record<Concern, string> = {
   entry_step: "Step at door: purpose-built ramp (get advice)",
   no_support_rail: "Grab bar zone (install by a professional)",
   slippery_floor: "Slippery floor: add a non-slip mat here",
+  uneven_ground: "Uneven ground: take the flattest route",
+  steps_no_railing: "Handrail zone (install by a professional)",
+  slippery_outdoor: "Slippery path: brush off moss and leaves",
+  loose_gravel: "Loose gravel: use a firm route",
+  low_branches: "Low branch: trim it back",
+  path_clutter: "Keep this path clear",
 };
 
 export const ROOM_W = 6;
@@ -159,6 +172,12 @@ export const CONCERN_PRIORITY: Record<Concern, Exclude<IssueStatus, "done">> = {
   trailing_cables: "medium",
   poor_lighting: "medium",
   out_of_reach: "medium",
+  uneven_ground: "high",
+  steps_no_railing: "high",
+  slippery_outdoor: "high",
+  loose_gravel: "medium",
+  low_branches: "medium",
+  path_clutter: "medium",
 };
 
 export const CONCERN_SHORT: Record<Concern, string> = {
@@ -171,6 +190,12 @@ export const CONCERN_SHORT: Record<Concern, string> = {
   entry_step: "Step at door",
   no_support_rail: "Support needed",
   slippery_floor: "Slippery floor",
+  uneven_ground: "Uneven ground",
+  steps_no_railing: "Handrail needed",
+  slippery_outdoor: "Slippery path",
+  loose_gravel: "Loose gravel",
+  low_branches: "Low branch",
+  path_clutter: "Path clutter",
 };
 
 export const STATUS_COLORS: Record<IssueStatus, string> = {
@@ -297,6 +322,13 @@ const FURNITURE: Record<RoomType, Box[]> = {
     onFloor("balcony-pot-2", 2.5, -2.1, [0.36, 0.36, 0.36], POT, round),
     at("balcony-plant-2", 2.5, 0.36, -2.1, [0.46, 0.5, 0.46], LEAF, { radius: 0.18 }),
   ],
+  garden: [
+    onFloor("garden-bench", -2.0, -2.1, [1.2, 0.9, 0.5], WOOD, { model: "garden-bench" }),
+    onFloor("outdoor-set", 1.9, 0.6, [0.8, 0.9, 1.75], WOOD, { model: "outdoor-set" }),
+    onFloor("garden-plant-1", -1.2, 1.6, [0.5, 1.0, 0.5], LEAF, { model: "potted-plant" }),
+    onFloor("garden-plant-2", 1.0, 2.15, [0.5, 1.0, 0.5], LEAF, { model: "potted-plant" }),
+    onFloor("wooden-bucket", 2.6, -2.1, [0.5, 0.3, 0.5], WOOD, { model: "wooden-bucket" }),
+  ],
   hallway_stairs: [
     // Stairs up along the back wall, built from stepped boxes (illustration only).
     ...[0, 1, 2, 3, 4].map((i) => onFloor(`stair-${i}`, 1.6 - i * 0.4, -2.0, [0.4, 0.2 * (i + 1), 1], WOOD_LIGHT, round)),
@@ -333,6 +365,10 @@ function issueBoxes(concern: Concern, space: RoomSpace, color: string): { boxes:
   const has = (t: RoomType) => space.type === t || space.merged.includes(t);
   const doorX = -ROOM_W / 2;
   const lampX = space.merged.includes("bedroom") ? 1.3 : 2.4;
+  if (room === "garden") {
+    const outdoor = gardenIssueBoxes(concern, color);
+    if (outdoor) return outdoor;
+  }
   switch (concern) {
     case "loose_rugs":
       return { boxes: [box("rug", [0.2, RED_ZONE_Y, 0.9], [1.8, 0.03, 1.1], color)], labelAt: [0.2, 0.5, 0.9] };
@@ -383,6 +419,54 @@ function issueBoxes(concern: Concern, space: RoomSpace, color: string): { boxes:
       const at: Vec3 = room === "bathroom" ? [-1.0, RED_ZONE_Y, -1.0] : room === "kitchen" ? [0.3, RED_ZONE_Y, -1.4] : has("kitchen") ? [1.9, RED_ZONE_Y, -1.45] : [doorX + 0.9, RED_ZONE_Y, DOOR.z];
       return { boxes: [box("slip-zone", at, [1.3, 0.02, 1.1], color)], labelAt: [at[0], 0.5, at[2]] };
     }
+    default:
+      // Outdoor-only issues are placed by gardenIssueBoxes; anything else gets a floor marker.
+      return { boxes: [box("issue-patch", [0, RED_ZONE_Y, 0.6], [1.0, 0.02, 1.0], color)], labelAt: [0, 0.5, 0.6] };
+  }
+}
+
+const BARK = "#6b4f3a";
+const CANOPY = "#4f7d4a";
+
+/** Outdoor markers placed on or beside the garden path. */
+function gardenIssueBoxes(concern: Concern, color: string): { boxes: Box[]; labelAt: Vec3 } | null {
+  switch (concern) {
+    case "uneven_ground":
+      return { boxes: [box("uneven-patch", [0, 0.015, 0.4], [0.9, 0.03, 0.7], color)], labelAt: [0, 0.45, 0.4] };
+    case "steps_no_railing":
+      // Highlighted zone beside the steps where a handrail should be fitted — not drawn as a rail.
+      return { boxes: [box("handrail-zone", [0.78, 0.5, -2.15], [0.04, 0.9, 0.7], color)], labelAt: [0.95, 1.3, -2.0] };
+    case "slippery_outdoor":
+      return { boxes: [box("slippery-path", [0, RED_ZONE_Y, -1.2], [0.9, 0.02, 0.8], color)], labelAt: [0, 0.45, -1.2] };
+    case "loose_gravel":
+      return { boxes: [box("gravel-patch", [-1.6, RED_ZONE_Y, 0.4], [1.2, 0.03, 0.8], color)], labelAt: [-1.6, 0.45, 0.4] };
+    case "low_branches":
+      return {
+        boxes: [
+          box("tree-trunk", [-1.6, 0.95, -0.8], [0.18, 1.9, 0.18], BARK),
+          box("tree-canopy", [-1.6, 2.1, -0.8], [1.0, 0.6, 1.0], CANOPY, { radius: 0.25 }),
+          // The branch reaches over the path at head height.
+          box("low-branch", [-0.8, 1.65, -0.8], [1.6, 0.08, 0.08], color),
+        ],
+        labelAt: [-0.3, 1.95, -0.8],
+      };
+    case "path_clutter":
+      return {
+        boxes: [
+          box("hose-on-path", [0.1, 0.02, 1.4], [0.5, 0.04, 0.5], color),
+          box("pot-on-path", [-0.2, 0.15, 1.85], [0.3, 0.3, 0.3], color),
+        ],
+        labelAt: [0, 0.6, 1.6],
+      };
+    case "narrow_path":
+      return { boxes: [box("path-strip", [0, 0.012, 1.0], [0.9, 0.02, 2.6], color)], labelAt: [0, 0.45, 1.0] };
+    case "poor_lighting":
+      return {
+        boxes: [box("dark-post", [0.85, 0.45, -1.0], [0.08, 0.9, 0.08], DARK), box("dark-lamp", [0.85, 0.99, -1.0], [0.2, 0.18, 0.2], color)],
+        labelAt: [0.85, 1.4, -1.0],
+      };
+    default:
+      return null;
   }
 }
 
@@ -445,5 +529,6 @@ export function buildRoomScene(room: RoomId, profile: HomeProfile, done: readonl
     issues,
     labels,
     fromAnswers: fromAnswers !== null,
+    ...(space.type === "garden" ? { outdoor: { steps: layoutOf(profile).gardenSteps } } : {}),
   };
 }

@@ -147,12 +147,43 @@ const ENTRANCE: Frame = {
   cabinet: [make("cabinet", "cabinet", 2.65, 0, -1.0, [0.6, 1.9, 1.6], WOOD, { model: "vintage-cabinet", rotationY: -QUARTER })],
 };
 
+const POT = "#b5735a";
+const HOSE = "#3f8f4f";
+
+// Garden: house wall at the back with the door in the middle; path runs x -0.5..0.5 to the front.
+const GARDEN: Frame = {
+  bench: [make("bench", "bench", -2.0, 0, -2.1, [1.2, 0.9, 0.5], WOOD, { model: "garden-bench" })],
+  garden_table: [
+    make("garden_table", "table-stand", 1.9, 0, 0.2, [0.12, 0.68, 0.12], DARK, { radius: 0 }),
+    make("garden_table", "table-top", 1.9, 0.68, 0.2, [0.8, 0.04, 0.8], WOOD, { support: "top", radius: 0.2 }),
+  ],
+  garden_chairs: [
+    make("garden_chairs", "garden-chair-1", 1.9, 0, -0.65, [0.6, 0.85, 0.6], "#e8e6e1", { model: "plastic-chair" }),
+    make("garden_chairs", "garden-chair-2", 1.9, 0, 1.05, [0.6, 0.85, 0.6], "#e8e6e1", { model: "plastic-chair", rotationY: Math.PI }),
+  ],
+  plant_pots: [
+    make("plant_pots", "pot-1", -1.2, 0, 1.6, [0.5, 1.0, 0.5], POT, { model: "potted-plant" }),
+    make("plant_pots", "pot-2", 1.0, 0, 2.15, [0.5, 1.0, 0.5], POT, { model: "potted-plant" }),
+  ],
+  garden_lights: [
+    make("garden_lights", "light-post-1", -0.85, 0, -0.6, [0.08, 0.9, 0.08], DARK, { radius: 0 }),
+    make("garden_lights", "light-head-1", -0.85, 0.9, -0.6, [0.18, 0.18, 0.18], LAMP, { support: "top" }),
+    make("garden_lights", "light-post-2", -0.85, 0, 1.4, [0.08, 0.9, 0.08], DARK, { radius: 0 }),
+    make("garden_lights", "light-head-2", -0.85, 0.9, 1.4, [0.18, 0.18, 0.18], LAMP, { support: "top" }),
+  ],
+  hose: [
+    make("hose", "hose-reel", 2.6, 0, -2.1, [0.45, 0.5, 0.35], HOSE),
+    make("hose", "hose-coil", 2.6, 0, -1.55, [0.55, 0.04, 0.55], HOSE, { support: "flat", radius: 0.2 }),
+  ],
+};
+
 export const FRAMES: Partial<Record<RoomType, Frame>> = {
   living_room: LIVING,
   bedroom: BEDROOM,
   kitchen: KITCHEN,
   bathroom: BATHROOM,
   entrance: ENTRANCE,
+  garden: GARDEN,
 };
 
 /**

@@ -228,6 +228,36 @@ describe("planner workflow", () => {
     expect((again.getByRole("textbox", { name: /Other/ }) as HTMLInputElement).value).toBe("recliner");
   });
 
+  it("Garden: the outdoor question adds a labelled outdoor area with its own furniture and issues", () => {
+    render(<App />);
+    navigate("#/plan");
+    click("Continue");
+    fireEvent.click(screen.getByRole("radio", { name: /^1BHK/ }));
+    const outdoor = within(screen.getByRole("group", { name: /garden, yard, terrace, or outdoor area/ }));
+    fireEvent.click(outdoor.getByRole("radio", { name: "Yes" }));
+    fireEvent.click(within(screen.getByRole("group", { name: "What kind of outdoor area?" })).getByRole("radio", { name: "Terrace" }));
+    fireEvent.click(
+      within(screen.getByRole("group", { name: /steps between the house and the outdoor area/ })).getByRole("radio", { name: "Yes" }),
+    );
+    expect(screen.getByText(/Your rooms:/).parentElement?.textContent).toContain("Garden / Outdoor (Terrace)");
+    click("Continue");
+
+    check("Garden / Outdoor (Terrace)");
+    click("Continue");
+    const furniture = within(screen.getByRole("group", { name: "Garden / Outdoor (Terrace)" }));
+    expect(furniture.getAllByRole("checkbox").map((c) => c.closest("label")?.textContent)).toEqual(
+      expect.arrayContaining(["🪑Bench", "🪵Table", "🪴Plant pots", "💡Garden lights", "🧵Hose"]),
+    );
+    click("Continue");
+
+    const issues = within(screen.getByRole("group", { name: "Garden / Outdoor (Terrace)" }));
+    expect(issues.getByRole("checkbox", { name: "Steps without a handrail" })).toBeTruthy();
+    expect(issues.queryByRole("checkbox", { name: /Loose rugs/ })).toBeNull();
+    fireEvent.click(issues.getByRole("checkbox", { name: "Steps without a handrail" }));
+    click("Build my plan");
+    expect(screen.getByText("Have a handrail professionally installed beside the steps")).toBeTruthy();
+  });
+
   it("ignores a corrupted saved draft", () => {
     localStorage.setItem("nooksure.planner.v1", "{not json");
     render(<App />);

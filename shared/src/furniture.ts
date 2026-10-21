@@ -95,6 +95,7 @@ export const FURNITURE_BY_ROOM: Partial<Record<RoomType, readonly FurnitureItem[
   kitchen: ["dining_table", "chairs", "fridge", "counter_stove", "storage_cabinets"],
   bathroom: ["toilet_western", "toilet_indian", "washbasin", "shower", "bathtub", "bucket_mug", "stool", "mirror", "towel_rail", "bath_mat"],
   entrance: ["shoe_rack", "door_mat", "cabinet"],
+  garden: ["bench", "garden_chairs", "garden_table", "plant_pots", "garden_lights", "hose"],
 };
 
 export const RoomFurnitureSchema = z.object({

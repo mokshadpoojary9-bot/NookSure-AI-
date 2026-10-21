@@ -27,6 +27,13 @@ export const ConcernSchema = z.enum([
   "entry_step",
   "no_support_rail",
   "slippery_floor",
+  // outdoor
+  "uneven_ground",
+  "steps_no_railing",
+  "slippery_outdoor",
+  "loose_gravel",
+  "low_branches",
+  "path_clutter",
 ]);
 export type Concern = z.infer<typeof ConcernSchema>;
 
@@ -73,17 +80,25 @@ export const KIND_LABELS: Record<RecommendationKind, string> = {
 };
 
 const ALL_ROOMS = RoomTypeSchema.options;
+const INDOOR = ALL_ROOMS.filter((r) => r !== "garden");
+const OUTDOOR: readonly RoomType[] = ["garden"];
 
 export const CONCERNS: Record<Concern, { label: string; rooms: readonly RoomType[] }> = {
-  loose_rugs: { label: "Loose rugs or mats on walking routes", rooms: ALL_ROOMS },
-  clutter: { label: "Clutter on the floor or walkways", rooms: ALL_ROOMS },
-  narrow_path: { label: "Narrow path between furniture", rooms: ["entrance", "living_room", "bedroom", "kitchen", "hallway_stairs", "balcony"] },
+  loose_rugs: { label: "Loose rugs or mats on walking routes", rooms: INDOOR },
+  clutter: { label: "Clutter on the floor or walkways", rooms: INDOOR },
+  narrow_path: { label: "Narrow path between furniture", rooms: ["entrance", "living_room", "bedroom", "kitchen", "hallway_stairs", "balcony", "garden"] },
   trailing_cables: { label: "Trailing cables or extension cords", rooms: ["living_room", "bedroom", "kitchen", "hallway_stairs"] },
   poor_lighting: { label: "Dim lighting on routes or at night", rooms: ALL_ROOMS },
   out_of_reach: { label: "Everyday items stored too high or too low", rooms: ["bedroom", "bathroom", "kitchen", "living_room"] },
   entry_step: { label: "Step or raised threshold at a doorway", rooms: ["entrance", "bathroom", "hallway_stairs", "balcony"] },
   no_support_rail: { label: "No grab bar or handrail where support is needed", rooms: ["bathroom", "hallway_stairs", "entrance"] },
   slippery_floor: { label: "Slippery or wet floor", rooms: ["bathroom", "kitchen", "entrance", "balcony"] },
+  uneven_ground: { label: "Uneven ground or paving", rooms: OUTDOOR },
+  steps_no_railing: { label: "Steps without a handrail", rooms: OUTDOOR },
+  slippery_outdoor: { label: "Slippery tiles, moss or wet leaves", rooms: OUTDOOR },
+  loose_gravel: { label: "Loose stones or gravel on the path", rooms: OUTDOOR },
+  low_branches: { label: "Low branches over the path", rooms: OUTDOOR },
+  path_clutter: { label: "Hoses, pots or tools on the path", rooms: OUTDOOR },
 };
 
 interface Suggestion {
@@ -95,6 +110,8 @@ interface Suggestion {
   seekProfessional?: boolean;
   /** Only include for these aids; omit to always include. */
   aids?: readonly MobilityAid[];
+  /** Only for spaces covering one of these room types; omit for any. */
+  rooms?: readonly RoomType[];
 }
 
 const NO_IMPROVISED_SUPPORT =
@@ -115,6 +132,9 @@ interface FurnitureSuggestion extends Omit<Suggestion, "aids"> {
  * a seat in a wet area, a step or a ramp.
  */
 export const FURNITURE_SUGGESTIONS: Partial<Record<Concern, readonly FurnitureSuggestion[]>> = {
+  path_clutter: [
+    { key: "f-hose", requires: "hose", kind: "reuse", title: "Coil your hose on its reel or a hook after use", detail: "So it never lies across the path." },
+  ],
   loose_rugs: [
     { key: "f-rug", requires: "rug", replaces: "remove-rugs", kind: "remove", title: "Roll up your rug and store it", detail: "Take your rug off the walking route; curled edges and sliding rugs are common trip hazards." },
   ],
@@ -130,12 +150,14 @@ export const FURNITURE_SUGGESTIONS: Partial<Record<Concern, readonly FurnitureSu
     { key: "f-coffee-table", requires: "coffee_table", kind: "rearrange", title: "Your coffee table: move it to the side", detail: "A low table in the middle of a route is easy to walk into; move it beside the sofa instead." },
     { key: "f-dining", requires: "dining_table", kind: "rearrange", title: "Your dining table: push it and the chairs to one side", detail: "Keep a clear route past the table, and tuck chairs in after use." },
     { key: "f-plants", requires: "plants", kind: "rearrange", title: "Your plants: move the pots off the walking route", detail: "Put plant pots against the walls or on shelves at a safe height." },
+    { key: "f-pots", requires: "plant_pots", kind: "rearrange", title: "Your plant pots: move them off the path", detail: "Group pots at the edges of the garden so the path stays wide and clear." },
   ],
   trailing_cables: [
     { key: "f-tv-cables", requires: "tv_unit", kind: "rearrange", title: "Tidy the cables behind your TV unit", detail: "Run TV and charger cables behind your TV unit and along the wall so none cross the floor." },
   ],
   poor_lighting: [
     { key: "f-floor-lamp", requires: "floor_lamp", replaces: "reuse-lamps", kind: "reuse", title: "Move your floor lamp to light the route", detail: "Stand your floor lamp where it lights the path between seats, doors and the bathroom, with its switch easy to reach." },
+    { key: "f-garden-lights", requires: "garden_lights", replaces: "outdoor-lights", kind: "reuse", title: "Point your garden lights at the path and steps", detail: "Aim the lights you have along the route from the door, and at any steps or level changes." },
     { key: "f-bedside-lamp", requires: "bedside_lamp", kind: "reuse", title: "Keep your bedside lamp within reach of the bed", detail: "So the light can be switched on before getting up at night." },
   ],
   out_of_reach: [
@@ -159,7 +181,96 @@ export const FURNITURE_SUGGESTIONS: Partial<Record<Concern, readonly FurnitureSu
   ],
 };
 
+const NO_IMPROVISED_HANDHOLD =
+  "Never use plant pots, garden furniture, a wall edge or a fence as a handhold — they are not built to take a person's weight.";
+
 export const SUGGESTIONS: Record<Concern, readonly Suggestion[]> = {
+  uneven_ground: [
+    {
+      key: "flattest-route",
+      kind: "rearrange",
+      title: "Choose the flattest route and keep it clear",
+      detail: "Use the smoothest way between the door and where people sit, and keep it free of pots and tools so it's easy to follow.",
+    },
+    {
+      key: "level-paving",
+      kind: "purchase",
+      title: "Have uneven paving professionally levelled or repaired",
+      detail: "Lifted slabs, holes and sunken patches are trip hazards for walkers, canes and wheelchairs.",
+      seekProfessional: true,
+    },
+  ],
+  steps_no_railing: [
+    {
+      key: "steps-clear-lit",
+      kind: "rearrange",
+      title: "Keep the steps clear and well lit",
+      detail: "Until a handrail is fitted, keep the steps free of pots and leaves, light them at night, and have someone nearby when they're used.",
+      safetyNote: NO_IMPROVISED_HANDHOLD,
+    },
+    {
+      key: "installed-handrail",
+      kind: "purchase",
+      title: "Have a handrail professionally installed beside the steps",
+      detail: "A purpose-built handrail, securely fixed by a qualified installer. Ask about the right height and length.",
+      safetyNote: NO_IMPROVISED_HANDHOLD,
+      seekProfessional: true,
+    },
+    {
+      key: "garden-ramp",
+      kind: "purchase",
+      title: "For step-free access, ask about a purpose-built ramp",
+      detail: "A ramp made for the purpose, rated for the user and their mobility aid, with advice on slope and installation.",
+      safetyNote: NO_STACKED_RAMPS,
+      seekProfessional: true,
+    },
+  ],
+  slippery_outdoor: [
+    {
+      key: "brush-moss",
+      kind: "remove",
+      title: "Brush away moss, algae and wet leaves",
+      detail: "Clear the main path and steps regularly with a stiff brush, especially in shady spots and after rain.",
+    },
+    {
+      key: "outdoor-anti-slip",
+      kind: "purchase",
+      title: "Use an anti-slip treatment or grip strips on outdoor tiles",
+      detail: "Choose products made for outdoor use and wet weather.",
+    },
+  ],
+  loose_gravel: [
+    {
+      key: "firm-route",
+      kind: "rearrange",
+      title: "Use a firm route around gravel areas",
+      detail: "Loose gravel is hard going for wheels, walker feet and canes; plan the route over firm, level ground where possible.",
+    },
+    {
+      key: "firm-path",
+      kind: "purchase",
+      title: "Ask about a firm, level path through the gravel",
+      detail: "Paving or a stabilised path makes the route usable with a mobility aid.",
+      seekProfessional: true,
+    },
+  ],
+  low_branches: [
+    {
+      key: "trim-branches",
+      kind: "remove",
+      title: "Trim low branches over the path",
+      detail: "Cut back branches and plants so the path is clear at head height and wide enough for a mobility aid.",
+      safetyNote: "For large branches, or anything that needs a ladder, use a professional.",
+    },
+  ],
+  path_clutter: [
+    {
+      key: "clear-path",
+      kind: "remove",
+      title: "Clear hoses, pots and tools off the path",
+      detail: "Keep the route from the door free of anything that could catch a foot or a wheel.",
+    },
+  ],
   loose_rugs: [
     {
       key: "remove-rugs",
@@ -216,15 +327,24 @@ export const SUGGESTIONS: Record<Concern, readonly Suggestion[]> = {
   poor_lighting: [
     {
       key: "reuse-lamps",
+      rooms: INDOOR,
       kind: "reuse",
       title: "Move existing lamps onto the route",
       detail: "Reposition lamps you already own to light the path between bed, bathroom, and doors, with switches reachable before entering a dark area.",
     },
     {
       key: "night-lights",
+      rooms: INDOOR,
       kind: "purchase",
       title: "Add plug-in or motion-sensor night lights",
       detail: "Low-cost night lights along the bed-to-bathroom route help at night without anyone searching for a switch.",
+    },
+    {
+      key: "outdoor-lights",
+      rooms: OUTDOOR,
+      kind: "purchase",
+      title: "Add solar or motion-sensor path lights",
+      detail: "Low path lights along the route from the door, and at any steps, help at dusk and at night.",
     },
     {
       key: "contrast-edges",
@@ -337,8 +457,10 @@ export function generatePlan(profile: HomeProfile): PlanItem[] {
           furniture: f.requires,
         });
       }
+      const types = typesOf(spaceOf(profile, room));
       for (const s of SUGGESTIONS[concern]) {
         if (replaced.has(s.key)) continue;
+        if (s.rooms && !s.rooms.some((t) => types.includes(t))) continue;
         if (s.aids && !s.aids.some((aid) => profile.aids.includes(aid))) continue;
         items.push({
           id: `${room}:${concern}:${s.key}`,

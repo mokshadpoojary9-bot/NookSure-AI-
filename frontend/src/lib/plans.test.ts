@@ -58,7 +58,7 @@ describe("savePlan", () => {
   });
 
   it("saves the home layout with the plan, inside profile (no new top-level fields for the rules)", async () => {
-    const layout = { homeType: "2bhk" as const, doorIntoLiving: true, openKitchen: false, bathrooms: 2, attachedBathroom: true, balcony: true, customRooms: [] };
+    const layout = { homeType: "2bhk" as const, doorIntoLiving: true, openKitchen: false, bathrooms: 2, attachedBathroom: true, balcony: true, customRooms: [], garden: false, gardenType: "backyard" as const, gardenSteps: false };
     await savePlan({ title: "Flat", profile: { ...profile, layout, rooms: ["living_room", "bedroom_2"] }, done: [] });
     const [, data] = fs.addDoc.mock.calls[0] as unknown as [unknown, Record<string, unknown>];
     expect((data.profile as { layout: unknown }).layout).toEqual(layout);

@@ -10,7 +10,7 @@ import { z } from "zod";
  * existing plans keep working unchanged.
  */
 
-export const RoomTypeSchema = z.enum(["entrance", "living_room", "bedroom", "bathroom", "kitchen", "hallway_stairs", "balcony"]);
+export const RoomTypeSchema = z.enum(["entrance", "living_room", "bedroom", "bathroom", "kitchen", "hallway_stairs", "balcony", "garden"]);
 export type RoomType = z.infer<typeof RoomTypeSchema>;
 
 export const ROOM_LABELS: Record<RoomType, string> = {
@@ -21,6 +21,7 @@ export const ROOM_LABELS: Record<RoomType, string> = {
   kitchen: "Kitchen",
   hallway_stairs: "Hallway & stairs",
   balcony: "Balcony",
+  garden: "Garden / Outdoor",
 };
 
 const ROOM_ID_RE = new RegExp(`^(${RoomTypeSchema.options.join("|")})(?:_([2-9]))?$`);
@@ -56,6 +57,15 @@ export const HOME_TYPE_HINTS: Record<HomeType, string> = {
 
 const BEDROOMS: Record<Exclude<HomeType, "custom">, number> = { studio: 0, "1bhk": 1, "2bhk": 2, "3bhk": 3 };
 
+export const GardenTypeSchema = z.enum(["front_garden", "backyard", "terrace", "courtyard"]);
+export type GardenType = z.infer<typeof GardenTypeSchema>;
+export const GARDEN_TYPE_LABELS: Record<GardenType, string> = {
+  front_garden: "Front garden",
+  backyard: "Backyard",
+  terrace: "Terrace",
+  courtyard: "Courtyard",
+};
+
 export const HomeLayoutSchema = z.object({
   homeType: HomeTypeSchema,
   /** The main door opens straight into the living room (no separate entrance). */
@@ -68,6 +78,11 @@ export const HomeLayoutSchema = z.object({
   balcony: z.boolean().default(false),
   /** Custom homes only: the rooms the user picked. */
   customRooms: z.array(RoomIdSchema).default([]),
+  /** Garden, yard, terrace or other outdoor area. */
+  garden: z.boolean().default(false),
+  gardenType: GardenTypeSchema.default("backyard"),
+  /** Steps between the house and the outdoor area. */
+  gardenSteps: z.boolean().default(false),
 });
 export type HomeLayout = z.infer<typeof HomeLayoutSchema>;
 
@@ -128,6 +143,10 @@ export function generateRooms(layout: HomeLayout): RoomSpace[] {
   }
   list = list.filter((id) => !(id !== "living_room" && merged.includes(id as RoomType) && list.includes("living_room")));
 
+  // The outdoor area comes from its own question (for every home type).
+  list = list.filter((id) => id !== "garden");
+  if (layout.garden) list.push("garden");
+
   const count = (t: RoomType) => list.filter((id) => roomTypeOf(id) === t).length;
   const bedrooms = count("bedroom");
 
@@ -143,6 +162,7 @@ export function generateRooms(layout: HomeLayout): RoomSpace[] {
         if (merged.includes("kitchen")) label += " + open kitchen";
       }
     }
+    if (id === "garden") label = `Garden / Outdoor (${GARDEN_TYPE_LABELS[layout.gardenType]})`;
     if (id === "bathroom" && !custom && layout.attachedBathroom && bedrooms > 0) {
       label += bedrooms > 1 ? " (attached to Bedroom 1)" : " (attached to bedroom)";
     }

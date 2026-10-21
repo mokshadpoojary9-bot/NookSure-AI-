@@ -106,7 +106,7 @@ describe("real furniture models", () => {
 
 describe("merged spaces", () => {
   const studio = profile({
-    layout: { homeType: "studio", doorIntoLiving: true, openKitchen: true, bathrooms: 1, attachedBathroom: false, balcony: false, customRooms: [] },
+    layout: { homeType: "studio", doorIntoLiving: true, openKitchen: true, bathrooms: 1, attachedBathroom: false, balcony: false, customRooms: [], garden: false, gardenType: "backyard" as const, gardenSteps: false },
     rooms: ["living_room"],
     concerns: { living_room: ["entry_step", "slippery_floor", "poor_lighting", "no_support_rail"] },
   });
@@ -133,7 +133,7 @@ describe("merged spaces", () => {
 
   it("numbered rooms reuse their base layout with their own label", () => {
     const p = profile({
-      layout: { homeType: "2bhk", doorIntoLiving: false, openKitchen: false, bathrooms: 1, attachedBathroom: false, balcony: true, customRooms: [] },
+      layout: { homeType: "2bhk", doorIntoLiving: false, openKitchen: false, bathrooms: 1, attachedBathroom: false, balcony: true, customRooms: [], garden: false, gardenType: "backyard" as const, gardenSteps: false },
       rooms: ["bedroom_2", "balcony"],
     });
     expect(buildRoomScene("bedroom_2", p, [])).toMatchObject({ type: "bedroom", label: "Bedroom 2" });
@@ -185,7 +185,7 @@ describe("furniture-driven scenes and labels", () => {
 
   it("merged rooms combine their furniture without overlaps", () => {
     const p = profile({
-      layout: { homeType: "studio", doorIntoLiving: true, openKitchen: true, bathrooms: 1, attachedBathroom: false, balcony: false, customRooms: [] },
+      layout: { homeType: "studio", doorIntoLiving: true, openKitchen: true, bathrooms: 1, attachedBathroom: false, balcony: false, customRooms: [], garden: false, gardenType: "backyard" as const, gardenSteps: false },
       rooms: ["living_room"],
       furniture: { living_room: { items: ["sofa", "bed", "fridge", "counter_stove", "shoe_rack", "dining_table", "chairs"], other: "", skipped: false } },
     });
@@ -197,5 +197,38 @@ describe("furniture-driven scenes and labels", () => {
         const apart = [0, 2].some((k) => Math.abs(a.position[k]! - b.position[k]!) >= (a.size[k]! + b.size[k]!) / 2 - 0.005);
         expect(apart, `${a.key} overlaps ${b.key}`).toBe(true);
       }
+  });
+});
+
+describe("garden scene", () => {
+  const gardenProfile = (steps: boolean, extra: Partial<HomeProfile> = {}) =>
+    profile({
+      layout: { homeType: "1bhk", doorIntoLiving: false, openKitchen: false, bathrooms: 1, attachedBathroom: false, balcony: false, customRooms: [], garden: true, gardenType: "backyard" as const, gardenSteps: steps },
+      rooms: ["garden"],
+      ...extra,
+    });
+
+  it("is an outdoor scene that knows whether there are steps", () => {
+    expect(buildRoomScene("garden", gardenProfile(true), [])).toMatchObject({ type: "garden", label: "Garden / Outdoor (Backyard)", outdoor: { steps: true } });
+    expect(buildRoomScene("garden", gardenProfile(false), []).outdoor).toEqual({ steps: false });
+    expect(buildRoomScene("living_room", profile({ rooms: ["living_room"] }), []).outdoor).toBeUndefined();
+  });
+
+  it("shows the user's outdoor furniture and labels outdoor issues at the spot", () => {
+    const scene = buildRoomScene(
+      "garden",
+      gardenProfile(true, {
+        concerns: { garden: ["steps_no_railing", "low_branches", "slippery_outdoor"] },
+        furniture: { garden: { items: ["bench", "garden_lights"], other: "", skipped: false } },
+      }),
+      [],
+    );
+    expect(new Set(scene.furniture.map((b) => b.item))).toEqual(new Set(["bench", "garden_lights"]));
+    const texts = scene.labels.map((l) => l.text);
+    expect(texts).toEqual(
+      expect.arrayContaining(["Handrail zone (install by a professional)", "Low branch: trim it back", "Slippery path: brush off moss and leaves"]),
+    );
+    // The handrail need is a highlighted zone, never drawn as a rail.
+    expect(scene.issues.find((i) => i.concern === "steps_no_railing")!.boxes.map((b) => b.key)).toEqual(["handrail-zone"]);
   });
 });
