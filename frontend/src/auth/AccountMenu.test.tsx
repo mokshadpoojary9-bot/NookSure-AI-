@@ -28,12 +28,12 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("Google sign-in", () => {
-  it("runs as a guest when Firebase isn't configured", () => {
+  it("runs as a guest when Firebase isn't configured", async () => {
     render(<App />);
     expect(screen.getByText("Guest mode")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Sign in/ })).toBeNull();
-    // Existing pages still work without signing in.
-    expect(screen.getByRole("link", { name: "Start planning" })).toBeTruthy();
+    // Existing pages still work without signing in (the landing page loads as its own chunk).
+    expect(await screen.findByRole("link", { name: "Start planning" }, { timeout: 5000 })).toBeTruthy();
   });
 
   it("goes from loading to signed-out to signed-in and back", async () => {

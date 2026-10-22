@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // No WebGL in jsdom: replace the canvas with a stub and skip loading three.js internals.
@@ -40,11 +40,9 @@ const seedPlan = () =>
   );
 
 async function openPlanWith3D() {
+  // Start on the planner, so the (lazily loaded) landing page isn't loaded first.
+  window.location.hash = "#/plan";
   render(<App />);
-  act(() => {
-    window.location.hash = "#/plan";
-    window.dispatchEvent(new HashChangeEvent("hashchange"));
-  });
   const toggle = screen.getByRole("button", { name: "Show 3D view" });
   expect(toggle.getAttribute("aria-expanded")).toBe("false");
   fireEvent.click(toggle);

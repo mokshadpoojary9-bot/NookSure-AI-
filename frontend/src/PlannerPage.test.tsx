@@ -38,9 +38,10 @@ describe("routing", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Home planner" })).toBeTruthy();
   });
 
-  it("describes the 3D room view as built and illustrative, not to scale", () => {
+  it("describes the 3D room view as built and illustrative, not to scale", async () => {
     render(<App />);
-    expect(screen.getByText(/interactive 3D view/).textContent).toMatch(/illustrative layout, not to scale/);
+    // The landing page is its own lazily loaded chunk.
+    expect((await screen.findByText(/interactive 3D view/, {}, { timeout: 5000 })).textContent).toMatch(/illustrative layout, not to scale/);
     expect(screen.queryByText(/not built yet/)).toBeNull();
   });
 });
