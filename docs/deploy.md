@@ -34,7 +34,7 @@ needs the frontend URL.
    | `NODE_VERSION`    | `22`                                         |
    | `NODE_ENV`        | `production`                                 |
    | `GEMINI_API_KEY`  | your Gemini key                              |
-   | `GEMINI_MODEL`    | optional — leave out to use `gemini-flash-latest` |
+   | `GEMINI_MODEL`    | `gemini-2.5-flash`                           |
    | `FRONTEND_ORIGIN` | leave empty for now — you'll set it in step 3 |
 
    Don't add `PORT`; Render sets it automatically.
