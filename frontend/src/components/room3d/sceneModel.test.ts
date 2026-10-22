@@ -83,19 +83,54 @@ describe("real furniture models", () => {
     }
   });
 
+  // Rocks and planting have no fixed real-world size, so they may be scaled freely.
+  const NATURAL = new Set(["mossy-rocks", "grass-tuft"]);
+
   it("fits each model inside its slot and the room, on the floor, at a sensible scale", () => {
     for (const { room, b } of slots) {
       const fit = fitModel(b, b.model!);
       const where = `${room}/${b.key}`;
-      expect(fit.scale, `${where} scale`).toBeGreaterThan(0.5);
-      expect(fit.scale, `${where} scale`).toBeLessThan(1.3);
+      if (!NATURAL.has(b.model!)) {
+        expect(fit.scale, `${where} scale`).toBeGreaterThan(0.5);
+        expect(fit.scale, `${where} scale`).toBeLessThan(1.3);
+      }
       fit.size.forEach((v, i) => expect(v, `${where} size[${i}]`).toBeLessThanOrEqual(b.size[i]! + 1e-9));
       // Furniture stands on the floor; decor sits exactly at the bottom of its own slot (a wall or a surface).
       expect(fit.position[1], `${where} base`).toBeCloseTo(b.position[1] - b.size[1] / 2, 9);
-      if (!b.key.startsWith("decor-")) expect(fit.position[1], `${where} floor`).toBe(0);
+      if (!b.key.startsWith("decor-") && b.support !== "top" && b.support !== "wall") expect(fit.position[1], `${where} floor`).toBe(0);
       expect(Math.abs(fit.position[0]) + fit.size[0] / 2, `${where} x`).toBeLessThanOrEqual(ROOM_W / 2);
       expect(Math.abs(fit.position[2]) + fit.size[2] / 2, `${where} z`).toBeLessThanOrEqual(ROOM_D / 2);
     }
+  });
+
+  it("shows real models by default in every room that has them, not just boxes", () => {
+    const modelled = (room: (typeof RoomTypeSchema.options)[number]) =>
+      new Set(buildRoomScene(room, empty(room), []).furniture.filter((b) => b.model).map((b) => b.model));
+    for (const id of ["sofa", "armchair", "coffee-table", "television", "potted-plant", "shelves"]) expect(modelled("living_room").has(id), id).toBe(true);
+    for (const id of ["day-bed", "side-table", "table-lamp", "drawer", "wooden-armchair"]) expect(modelled("bedroom").has(id), id).toBe(true);
+    for (const id of ["dining-table", "school-chair", "vintage-cabinet", "microwave", "kettle", "brass-pan"]) expect(modelled("kitchen").has(id), id).toBe(true);
+    for (const id of ["toilet", "sink", "towel-rail", "bucket", "towel-stack"]) expect(modelled("bathroom").has(id), id).toBe(true);
+    for (const id of ["garden-bench", "round-table", "plastic-chair", "potted-plant", "mossy-rocks", "flower-bed"]) expect(modelled("garden").has(id), id).toBe(true);
+    expect(modelled("balcony").has("outdoor-set")).toBe(true);
+  });
+
+  it("uses every published model in at least one scene", () => {
+    const all = (items: Record<string, string[]>) =>
+      profile({
+        rooms: Object.keys(items) as HomeProfile["rooms"],
+        furniture: Object.fromEntries(Object.entries(items).map(([r, i]) => [r, { items: i, other: "", skipped: false }])) as HomeProfile["furniture"],
+      });
+    const p = all({
+      living_room: ["sofa", "armchair", "coffee_table", "tv_unit", "plants", "shelves"],
+      bedroom: ["bed", "side_tables", "bedside_lamp", "wardrobe", "chair"],
+      kitchen: ["counter_stove", "storage_cabinets", "dining_table", "chairs"],
+      bathroom: ["toilet_western", "washbasin", "bathtub", "bucket_mug", "stool", "towel_rail"],
+      garden: ["bench", "garden_table", "garden_chairs", "plant_pots"],
+    });
+    const used = new Set(
+      [...p.rooms, "balcony" as const].flatMap((r) => buildRoomScene(r, r === "balcony" ? empty("balcony") : p, []).furniture.map((b) => b.model)),
+    );
+    for (const id of Object.keys(MODELS)) expect(used.has(id), `${id} is never shown`).toBe(true);
   });
 
   it("keeps the coffee table at its original scale and orientation", () => {
@@ -116,8 +151,10 @@ describe("merged spaces", () => {
   it("render as one room with a clear label and the merged rooms' furniture", () => {
     const scene = buildRoomScene("living_room", studio, []);
     expect(scene.label).toBe("Main room (living + sleeping + entrance + kitchenette)");
-    const keys = scene.furniture.map((b) => b.key);
-    expect(keys).toEqual(expect.arrayContaining(["sofa", "studio-bed", "kitchenette", "entry-shoe-rack"]));
+    // The living room's defaults plus each merged room's: a bed, a kitchen counter and a shoe rack.
+    const items = scene.furniture.map((b) => b.item);
+    expect(items).toEqual(expect.arrayContaining(["sofa", "bed", "counter_stove", "shoe_rack"]));
+    expect(scene.fromAnswers).toBe(false);
     // Issues from the merged entrance and kitchen show up in the same room.
     expect(scene.issues.map((i) => i.concern)).toEqual(["entry_step", "slippery_floor", "poor_lighting", "no_support_rail"]);
   });
@@ -226,7 +263,7 @@ describe("garden scene", () => {
       }),
       [],
     );
-    expect(new Set(scene.furniture.map((b) => b.item))).toEqual(new Set(["bench", "garden_lights"]));
+    expect(new Set(scene.furniture.filter((b) => !b.key.startsWith("decor-")).map((b) => b.item))).toEqual(new Set(["bench", "garden_lights"]));
     const texts = scene.labels.map((l) => l.text);
     expect(texts).toEqual(
       expect.arrayContaining(["Handrail zone (install by a professional)", "Low branch: trim it back", "Slippery path: brush off moss and leaves"]),

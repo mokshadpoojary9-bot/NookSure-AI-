@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-21",
+  "generated": "2026-10-22",
   "models": [
     {
       "id": "sofa",
@@ -595,6 +595,227 @@
       "source": "Poly Haven (wooden_bucket_02)",
       "author": "Poly Haven",
       "license": "CC0"
+    },
+    {
+      "id": "books",
+      "name": "Book set",
+      "room": "living",
+      "item": "decor",
+      "path": "models/living/books.glb",
+      "bytes": 1043272,
+      "size": [
+        0.551,
+        0.237,
+        0.164
+      ],
+      "triangles": 7983,
+      "source": "Poly Haven (book_encyclopedia_set_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "tea-set",
+      "name": "Tea set",
+      "room": "kitchen",
+      "item": "decor",
+      "path": "models/kitchen/tea-set.glb",
+      "bytes": 694412,
+      "size": [
+        0.919,
+        0.165,
+        0.484
+      ],
+      "triangles": 19992,
+      "source": "Poly Haven (tea_set_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "pears",
+      "name": "Bowl of pears",
+      "room": "kitchen",
+      "item": "decor",
+      "path": "models/kitchen/pears.glb",
+      "bytes": 514460,
+      "size": [
+        0.126,
+        0.071,
+        0.167
+      ],
+      "triangles": 12572,
+      "source": "Poly Haven (food_pears_asian_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "brass-pot",
+      "name": "Brass pot",
+      "room": "kitchen",
+      "item": "decor",
+      "path": "models/kitchen/brass-pot.glb",
+      "bytes": 324172,
+      "size": [
+        0.302,
+        0.291,
+        0.302
+      ],
+      "triangles": 3760,
+      "source": "Poly Haven (brass_pot_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "brass-pan",
+      "name": "Brass pan",
+      "room": "kitchen",
+      "item": "decor",
+      "path": "models/kitchen/brass-pan.glb",
+      "bytes": 362928,
+      "size": [
+        0.191,
+        0.053,
+        0.45
+      ],
+      "triangles": 4340,
+      "source": "Poly Haven (brass_pan_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "thermos",
+      "name": "Thermos flask",
+      "room": "kitchen",
+      "item": "decor",
+      "path": "models/kitchen/thermos.glb",
+      "bytes": 404080,
+      "size": [
+        0.141,
+        0.32,
+        0.109
+      ],
+      "triangles": 5514,
+      "source": "Poly Haven (plastic_thermos)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "stool",
+      "name": "Wooden stool",
+      "room": "bathroom",
+      "item": "stool",
+      "path": "models/bathroom/stool.glb",
+      "bytes": 351024,
+      "size": [
+        0.301,
+        0.418,
+        0.301
+      ],
+      "triangles": 1514,
+      "source": "Poly Haven (WoodenTable_02)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "laptop",
+      "name": "Laptop",
+      "room": "bedroom",
+      "item": "decor",
+      "path": "models/bedroom/laptop.glb",
+      "bytes": 934000,
+      "size": [
+        0.652,
+        0.543,
+        0.486
+      ],
+      "triangles": 14450,
+      "source": "Poly Haven (classic_laptop)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "fancy-frame",
+      "name": "Picture frame (ornate)",
+      "room": "bedroom",
+      "item": "decor",
+      "path": "models/bedroom/fancy-frame.glb",
+      "bytes": 534432,
+      "size": [
+        0.603,
+        0.464,
+        0.02
+      ],
+      "triangles": 938,
+      "source": "Poly Haven (fancy_picture_frame_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "plunger",
+      "name": "Plunger",
+      "room": "bathroom",
+      "item": "decor",
+      "path": "models/bathroom/plunger.glb",
+      "bytes": 380940,
+      "size": [
+        0.172,
+        0.421,
+        0.172
+      ],
+      "triangles": 3278,
+      "source": "Poly Haven (plunger)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "round-table",
+      "name": "Round garden table",
+      "room": "garden",
+      "item": "garden_table",
+      "path": "models/garden/round-table.glb",
+      "bytes": 492624,
+      "size": [
+        0.796,
+        0.746,
+        0.796
+      ],
+      "triangles": 4254,
+      "source": "Poly Haven (round_wooden_table_02)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "flower-bed",
+      "name": "Ground plants",
+      "room": "garden",
+      "item": "decor",
+      "path": "models/garden/flower-bed.glb",
+      "bytes": 2741992,
+      "size": [
+        1.235,
+        0.411,
+        0.321
+      ],
+      "triangles": 29997,
+      "source": "Poly Haven (periwinkle_plant)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "grass-tuft",
+      "name": "Grass tuft",
+      "room": "garden",
+      "item": "decor",
+      "path": "models/garden/grass-tuft.glb",
+      "bytes": 1787744,
+      "size": [
+        5.605,
+        0.343,
+        0.327
+      ],
+      "triangles": 14991,
+      "source": "Poly Haven (grass_medium_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
     }
   ],
   "skipped": [
@@ -611,20 +832,24 @@
       "reason": "thin articulated arm, barely visible and 1.4 m tall — floor lamp uses a simple shape"
     },
     {
-      "file": "books",
-      "reason": "67k triangles / 3 MB for decoration only"
-    },
-    {
-      "file": "plant-pot",
-      "reason": "periwinkle_plant is a spread of loose ground plants, not a pot — garden plant pots reuse the potted plant model"
-    },
-    {
       "file": "shrub",
       "reason": "shrub_sorrel_01 is a few tiny sprigs (6 cm) — not useful at room scale"
     },
     {
       "file": "garden-light",
       "reason": "street_lamp_02 is a wall-mounted lantern; its mounting side couldn't be verified — garden lights use a simple shape"
+    },
+    {
+      "file": "office-desk",
+      "reason": "metal_office_desk is a 2 m office desk — no matching furniture question, and adding unasked floor furniture would contradict the user’s answers"
+    },
+    {
+      "file": "small-tree",
+      "reason": "tree_small_02 has 2M triangles; decimating to web size (<5 MB) leaves a sparse, broken canopy — the low-branch marker keeps the simple tree"
+    },
+    {
+      "file": "rock",
+      "reason": "rock_09 is a 15 cm pebble — not visible at room scale; garden rocks use the mossy rock set"
     }
   ]
 }

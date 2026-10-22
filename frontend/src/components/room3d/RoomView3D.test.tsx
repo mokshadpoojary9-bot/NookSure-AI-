@@ -41,6 +41,31 @@ describe("RoomView3D without WebGL", () => {
     expect(issues.textContent).toContain("Dim lighting — Medium priority");
   });
 
+  it("keeps a capped preview to a few pins, issues first, and says how many are left out", () => {
+    render(
+      <RoomView3D
+        room="living_room"
+        profile={{
+          aids: [],
+          rooms: ["living_room"],
+          concerns: { living_room: ["narrow_path", "poor_lighting", "loose_rugs"] },
+          furniture: { living_room: { items: ["sofa", "armchair", "coffee_table", "rug", "floor_lamp", "plants"], other: "", skipped: false } },
+          notes: "",
+        }}
+        done={[]}
+        maxPins={4}
+      />,
+    );
+    const legend = screen.getByRole("list", { name: "All labels in this view" });
+    const items = legend.querySelectorAll("li");
+    expect(items.length).toBe(4);
+    // All three issues make the cut, numbered in order.
+    expect(legend.textContent).toContain("1Narrow path: keep this path clear");
+    expect(legend.textContent).toContain("Dim lighting: add a night light here");
+    expect(legend.textContent).toContain("Loose rug: roll it up and store it");
+    expect(screen.getByText(/^Showing 4 of \d+ labels/)).toBeTruthy();
+  });
+
   it("says when a room has no issues", () => {
     render(<RoomView3D room="kitchen" profile={{ aids: [], rooms: ["kitchen"], concerns: {}, notes: "" }} done={[]} />);
     expect(screen.getByText("No issues were noted for the kitchen.")).toBeTruthy();

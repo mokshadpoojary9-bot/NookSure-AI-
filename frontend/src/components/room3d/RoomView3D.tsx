@@ -1,8 +1,10 @@
-import { Canvas, type ThreeEvent } from "@react-three/fiber";
-import { ContactShadows, Environment, Html, Lightformer, OrbitControls, RoundedBox, useGLTF } from "@react-three/drei";
-import { Component, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import { ContactShadows, Environment, Lightformer, OrbitControls, RoundedBox, useGLTF } from "@react-three/drei";
+import { Component, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import { Vector3, type PerspectiveCamera } from "three";
 import { FURNITURE_LABELS, type Concern, type HomeProfile, type RoomId } from "@nooksure/shared";
 import { computeOverlays, type Overlays } from "./overlays";
+import { choosePins, placePins } from "./pinLayout";
 import {
   DOOR,
   GARDEN_PATH,
@@ -16,6 +18,7 @@ import {
   type IssueStatus,
   type ModelId,
   type RoomScene,
+  type Vec3,
 } from "./sceneModel";
 
 const WALL = "#e7e1d6";
@@ -118,23 +121,26 @@ function FittedModel({ b, id, onReady }: { b: Box; id: ModelId; onReady?: () => 
 }
 
 /** If a model can't load (missing file, old browser), keep the simple box instead. */
-class ModelBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+class ModelBoundary extends Component<{ fallback: ReactNode; children: ReactNode; onFail?: () => void }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() {
     return { failed: true };
+  }
+  componentDidCatch() {
+    this.props.onFail?.();
   }
   render() {
     return this.state.failed ? this.props.fallback : this.props.children;
   }
 }
 
-function Furniture({ b, onModelReady }: { b: Box; onModelReady?: () => void }) {
+function Furniture({ b, onModelSettled }: { b: Box; onModelSettled?: () => void }) {
   if (b.model) {
-    const box = <Mesh b={b} />;
     return (
-      <ModelBoundary fallback={box}>
-        <Suspense fallback={box}>
-          <FittedModel b={b} id={b.model} onReady={onModelReady} />
+      <ModelBoundary fallback={<Mesh b={b} />} onFail={onModelSettled}>
+        {/* While the model downloads, a faint placeholder rather than a solid block. */}
+        <Suspense fallback={<Mesh b={{ ...b, opacity: 0.18 }} />}>
+          <FittedModel b={b} id={b.model} onReady={onModelSettled} />
         </Suspense>
       </ModelBoundary>
     );
@@ -281,7 +287,7 @@ const OVERLAY_TOGGLES: { id: OverlayId; label: string; available: (o: Overlays, 
 ];
 
 /** Overlays are drawn in code: flat, static shapes (no animation). */
-function OverlayMeshes({ overlays, shown, showLabels }: { overlays: Overlays; shown: Record<OverlayId, boolean>; showLabels: boolean }) {
+function OverlayMeshes({ overlays, shown }: { overlays: Overlays; shown: Record<OverlayId, boolean> }) {
   const { turningCircle: tc, walkingPath: wp } = overlays;
   const dx = wp.to[0] - wp.from[0];
   const dz = wp.to[1] - wp.from[1];
@@ -309,19 +315,10 @@ function OverlayMeshes({ overlays, shown, showLabels }: { overlays: Overlays; sh
       )}
       {shown.grab &&
         overlays.grabZones.map((z) => (
-          <group key={z.key}>
-            <mesh position={z.position}>
-              <boxGeometry args={z.size} />
-              <meshBasicMaterial color="#d64545" transparent opacity={0.4} toneMapped={false} />
-            </mesh>
-            {showLabels && (
-              <Html position={[z.position[0], z.position[1] + z.size[1] / 2 + 0.2, z.position[2]]} center zIndexRange={[19, 0]}>
-                <span className="room3d-label kind-overlay" aria-hidden="true">
-                  {z.label}
-                </span>
-              </Html>
-            )}
-          </group>
+          <mesh key={z.key} position={z.position}>
+            <boxGeometry args={z.size} />
+            <meshBasicMaterial color="#d64545" transparent opacity={0.4} toneMapped={false} />
+          </mesh>
         ))}
       {shown.nonSlip &&
         overlays.nonSlipZones.map((z) => (
@@ -341,6 +338,98 @@ function OverlayMeshes({ overlays, shown, showLabels }: { overlays: Overlays; sh
   );
 }
 
+/** A numbered pin: a point in the room plus the full text shown in the legend. */
+interface Pin {
+  id: string;
+  n: number;
+  kind: string;
+  text: string;
+  at: Vec3;
+  status: IssueStatus;
+  concern?: Concern;
+}
+
+const PIN_R = 13; // px; 26 px pins
+const PIN_GAP = 4;
+
+/**
+ * Projects every pin to the screen on each rendered frame (the view renders on demand:
+ * when it is rotated, zoomed or resized) and spreads them so none overlap. Writes the
+ * positions straight to the pin elements, so moving the camera never re-renders React.
+ */
+function PinProjector({
+  pins,
+  pinEls,
+  leaderEls,
+  avoidEl,
+}: {
+  pins: Pin[];
+  pinEls: RefObject<(HTMLElement | null)[]>;
+  leaderEls: RefObject<(SVGGElement | null)[]>;
+  avoidEl: RefObject<HTMLElement>;
+}) {
+  const camera = useThree((s) => s.camera);
+  const size = useThree((s) => s.size);
+  const invalidate = useThree((s) => s.invalidate);
+  const v = useMemo(() => new Vector3(), []);
+  useEffect(() => invalidate(), [pins, invalidate]);
+  useFrame(() => {
+    const anchors = pins.map((p) => {
+      v.set(...p.at).project(camera as unknown as PerspectiveCamera);
+      return { x: ((v.x + 1) / 2) * size.width, y: ((1 - v.y) / 2) * size.height, visible: v.z < 1 };
+    });
+    const chip = avoidEl.current;
+    const avoid = chip ? [{ x: chip.offsetLeft - 4, y: chip.offsetTop - 4, w: chip.offsetWidth + 8, h: chip.offsetHeight + 8 }] : [];
+    const placed = placePins(anchors, { width: size.width, height: size.height, radius: PIN_R, gap: PIN_GAP, avoid });
+    placed.forEach((p, i) => {
+      const el = pinEls.current?.[i];
+      if (el) {
+        el.style.transform = `translate(${p.x - PIN_R}px, ${p.y - PIN_R}px)`;
+        el.style.visibility = p.visible ? "visible" : "hidden";
+      }
+      const leader = leaderEls.current?.[i];
+      if (leader) {
+        const show = p.visible && p.moved;
+        leader.style.visibility = show ? "visible" : "hidden";
+        if (show) {
+          const a = anchors[i]!;
+          const [line, dot] = leader.children;
+          line?.setAttribute("x1", String(a.x));
+          line?.setAttribute("y1", String(a.y));
+          line?.setAttribute("x2", String(p.x));
+          line?.setAttribute("y2", String(p.y));
+          dot?.setAttribute("cx", String(a.x));
+          dot?.setAttribute("cy", String(a.y));
+        }
+      }
+    });
+  });
+  return null;
+}
+
+/** Pulls the camera in or out so the whole room fits the view's width (phones are narrower). */
+function FitCamera({ target }: { target: Vec3 }) {
+  const camera = useThree((s) => s.camera) as unknown as PerspectiveCamera;
+  const width = useThree((s) => s.size.width);
+  const height = useThree((s) => s.size.height);
+  const controls = useThree((s) => s.controls) as { update?: () => void } | null;
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    if (!width || !height) return;
+    const tanHalfH = Math.tan((camera.fov * Math.PI) / 360) * (width / height);
+    // About 6.4 m of room width in view, plus the room's front half nearer the camera.
+    const dist = Math.min(11, Math.max(7.2, 3.2 / tanHalfH + 1.5));
+    const t = new Vector3(...target);
+    const dir = camera.position.clone().sub(t).normalize();
+    camera.position.copy(t.add(dir.multiplyScalar(dist)));
+    controls?.update?.();
+    invalidate();
+  }, [camera, width, height, controls, invalidate, target]);
+  return null;
+}
+
+const ORBIT_TARGET: Vec3 = [0, 0.7, 0];
+
 export function hasWebGL(): boolean {
   try {
     const c = document.createElement("canvas");
@@ -359,10 +448,12 @@ interface Props {
   done: readonly string[];
   selected?: Concern | null;
   onSelect?(concern: Concern): void;
+  /** Show at most this many pins (the landing-page preview keeps it to a few). */
+  maxPins?: number;
 }
 
 /** Interactive illustrative 3D view of one room with the plan's issues highlighted. */
-export default function RoomView3D({ room, profile, done, selected = null, onSelect }: Props) {
+export default function RoomView3D({ room, profile, done, selected = null, onSelect, maxPins }: Props) {
   const scene = useMemo(() => buildRoomScene(room, profile, done), [room, profile, done]);
   const webgl = useMemo(hasWebGL, []);
   const reducedMotion = useMemo(prefersReducedMotion, []);
@@ -376,8 +467,41 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
     return (b?.item ? FURNITURE_LABELS[b.item].label : key.replace(/[-_]\d*$/, "").replace(/[-_]/g, " ")).toLowerCase();
   };
   // Contact shadows are baked once; re-bake when a model finishes loading so it gets a shadow too.
-  const [modelsLoaded, setModelsLoaded] = useState(0);
-  const onModelReady = useCallback(() => setModelsLoaded((n) => n + 1), []);
+  const [modelsSettled, setModelsSettled] = useState(0);
+  const onModelSettled = useCallback(() => setModelsSettled((n) => n + 1), []);
+  const modelCount = scene.furniture.filter((b) => b.model).length;
+
+  // Numbered pins in the view; the full text is in the legend below.
+  const allPins = useMemo<Omit<Pin, "n">[]>(
+    () => [
+      ...scene.labels.map(({ id, kind, text, at, status, concern }) => ({ id, kind, text, at, status, concern })),
+      ...(shown.grab
+        ? overlays.grabZones.map((z) => ({
+            id: `overlay:${z.key}`,
+            kind: "overlay",
+            text: z.label,
+            at: [z.position[0], z.position[1] + z.size[1] / 2 + 0.15, z.position[2]] as Vec3,
+            status: "high" as const,
+          }))
+        : []),
+    ],
+    [scene, overlays, shown.grab],
+  );
+  const pins = useMemo<Pin[]>(() => choosePins(allPins, maxPins).map((p, i) => ({ ...p, n: i + 1 })), [allPins, maxPins]);
+  const [active, setActive] = useState<string | null>(null);
+  const pinEls = useRef<(HTMLElement | null)[]>([]);
+  const leaderEls = useRef<(SVGGElement | null)[]>([]);
+  const chipEl = useRef<HTMLSpanElement>(null);
+  const pinClass = (p: Pin) =>
+    `status-${p.status}${p.concern && selected === p.concern ? " selected" : ""}${active === p.id ? " active" : ""}`;
+  const hover = (id: string) => ({
+    onMouseEnter: () => setActive(id),
+    onMouseLeave: () => setActive((a) => (a === id ? null : a)),
+  });
+  const choose = (p: Pin) => {
+    setActive(p.id);
+    if (p.concern) select(p.concern);
+  };
 
   return (
     <figure className="room3d">
@@ -387,8 +511,9 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
           role="img"
           aria-label={`Illustrative 3D view of the ${roomName.toLowerCase()} with ${scene.issues.length} highlighted issues. The same issues are listed below.`}
         >
-          <span className="room3d-chip" aria-hidden="true">
+          <span className="room3d-chip" aria-hidden="true" ref={chipEl}>
             {roomName}
+            {modelsSettled < modelCount && <span className="room3d-loading-models"> · loading furniture…</span>}
           </span>
           <Canvas
             frameloop="demand"
@@ -397,7 +522,7 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
             gl={{ antialias: true, powerPreference: "low-power" }}
           >
             <color attach="background" args={[scene.outdoor ? "#e3eef5" : "#f3f1ec"]} />
-            <fog attach="fog" args={[scene.outdoor ? "#e3eef5" : "#f3f1ec", 12, 22]} />
+            <fog attach="fog" args={[scene.outdoor ? "#e3eef5" : "#f3f1ec", 14, 24]} />
             <hemisphereLight args={["#ffffff", "#c8b9a2", 0.55]} />
             <directionalLight position={[3.5, 6, 4]} intensity={1.05} color="#fff6ea" />
             <directionalLight position={[-4, 3, 2]} intensity={0.25} color="#dfe8ff" />
@@ -410,7 +535,7 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
 
             {scene.outdoor ? <OutdoorShell scene={scene} /> : <Shell scene={scene} />}
             {scene.furniture.map((b) => (
-              <Furniture key={b.key} b={b} onModelReady={onModelReady} />
+              <Furniture key={b.key} b={b} onModelSettled={onModelSettled} />
             ))}
             {scene.issues.map((issue) => {
               const isSelected = selected === issue.concern;
@@ -428,29 +553,13 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
                 </group>
               );
             })}
-            {/* In-scene labels: fixed pixel size, so they stay readable while rotating and zooming. */}
-            {showLabels &&
-              scene.labels.map((l) => (
-                <Html key={l.id} position={l.at} center zIndexRange={[20, 0]}>
-                  {/* Mouse/touch shortcut only; keyboard and screen-reader users use the label list below. */}
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    aria-hidden="true"
-                    className={`room3d-label kind-${l.kind} status-${l.status}${selected === l.concern ? " selected" : ""}`}
-                    onClick={() => l.concern && select(l.concern)}
-                  >
-                    <span className="room3d-dot" style={{ background: STATUS_COLORS[l.status] }} />
-                    {l.text}
-                  </button>
-                </Html>
-              ))}
 
-            <OverlayMeshes overlays={overlays} shown={shown} showLabels={showLabels} />
+            <OverlayMeshes overlays={overlays} shown={shown} />
+            {showLabels && <PinProjector pins={pins} pinEls={pinEls} leaderEls={leaderEls} avoidEl={chipEl} />}
 
             {/* Soft grounding shadow, baked once per room. */}
             <ContactShadows
-              key={`${room}-${modelsLoaded}`}
+              key={`${room}-${modelsSettled}`}
               position={[0, 0.006, 0]}
               scale={[scene.width, scene.depth]}
               resolution={512}
@@ -460,18 +569,57 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
               frames={1}
             />
 
+            <FitCamera target={ORBIT_TARGET} />
             <OrbitControls
               makeDefault
-              target={[0, 0.8, 0]}
+              target={ORBIT_TARGET}
               enablePan={false}
               enableDamping={!reducedMotion} // no coasting motion when reduced motion is requested
               autoRotate={false}
               minDistance={4}
-              maxDistance={11}
+              maxDistance={12}
               minPolarAngle={0.2}
               maxPolarAngle={Math.PI / 2 - 0.12} // stay above the floor
             />
           </Canvas>
+          {/* Numbered pins, placed every frame by PinProjector so they never overlap. Mouse/touch
+              shortcut only; keyboard and screen-reader users use the legend below. */}
+          {showLabels && pins.length > 0 && (
+            <div className="room3d-pins" aria-hidden="true">
+              <svg className="room3d-leaders">
+                {pins.map((p, i) => (
+                  <g
+                    key={p.id}
+                    ref={(el) => {
+                      leaderEls.current[i] = el;
+                    }}
+                    className={pinClass(p)}
+                    style={{ visibility: "hidden" }}
+                  >
+                    <line />
+                    <circle r={3} />
+                  </g>
+                ))}
+              </svg>
+              {pins.map((p, i) => (
+                <button
+                  key={p.id}
+                  ref={(el) => {
+                    pinEls.current[i] = el;
+                  }}
+                  type="button"
+                  tabIndex={-1}
+                  className={`room3d-pin ${pinClass(p)}`}
+                  style={{ visibility: "hidden" }}
+                  title={p.text}
+                  onClick={() => choose(p)}
+                  {...hover(p.id)}
+                >
+                  {p.n}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <p className="room3d-fallback" role="status">
@@ -480,6 +628,36 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
       )}
 
       <figcaption>
+        {pins.length > 0 && (
+          <ol className="room3d-pin-legend" aria-label="All labels in this view">
+            {pins.map((p) => (
+              <li key={p.id} className={pinClass(p)} {...hover(p.id)}>
+                <span className="room3d-pin-num" aria-hidden="true">
+                  {p.n}
+                </span>
+                {p.concern ? (
+                  <button
+                    type="button"
+                    className="link-button"
+                    aria-pressed={selected === p.concern}
+                    onClick={() => choose(p)}
+                    onFocus={() => setActive(p.id)}
+                    onBlur={() => setActive((a) => (a === p.id ? null : a))}
+                  >
+                    {p.text}
+                  </button>
+                ) : (
+                  <span>{p.text}</span>
+                )}
+              </li>
+            ))}
+          </ol>
+        )}
+        {allPins.length > pins.length && (
+          <p className="hint">
+            Showing {pins.length} of {allPins.length} labels — a full plan labels every issue and piece of furniture.
+          </p>
+        )}
         <p className="room3d-note">
           <strong>Illustrative layout, not to scale.</strong>
           {webgl && " Drag to rotate, scroll or pinch to zoom."}{" "}
@@ -489,7 +667,7 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
         </p>
         {webgl && (
           <div className="room3d-toolbar" role="group" aria-label="3D view options">
-            {scene.labels.length > 0 && (
+            {pins.length > 0 && (
               <button type="button" className="button small" aria-pressed={showLabels} onClick={() => setShowLabels((v) => !v)}>
                 {showLabels ? "Hide labels" : "Show labels"}
               </button>
@@ -533,25 +711,6 @@ export default function RoomView3D({ room, profile, done, selected = null, onSel
               </li>
             ))}
           </ul>
-        )}
-        {scene.labels.length > 0 && (
-          <details className="room3d-label-list">
-            <summary>All labels in this view ({scene.labels.length + 1})</summary>
-            <ul aria-label="All labels in this view">
-              <li>Room: {roomName}</li>
-              {scene.labels.map((l) => (
-                <li key={l.id}>
-                  {l.concern ? (
-                    <button type="button" className="link-button" onClick={() => select(l.concern!)}>
-                      {l.text}
-                    </button>
-                  ) : (
-                    l.text
-                  )}
-                </li>
-              ))}
-            </ul>
-          </details>
         )}
         <div className="room3d-check">
           <h4>Accessibility check (illustrative)</h4>

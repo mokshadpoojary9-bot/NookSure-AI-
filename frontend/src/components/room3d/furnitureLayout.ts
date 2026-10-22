@@ -44,16 +44,16 @@ const make = (item: FurnitureItem, key: string, x: number, y0: number, z: number
 
 type Frame = Partial<Record<FurnitureItem, FurnitureBox[]>>;
 
-const lamp = (x: number, z: number, y0 = 0.55): FurnitureBox[] => [
+const lamp = (x: number, z: number, y0 = 0.5): FurnitureBox[] => [
   make("bedside_lamp", "bedside-lamp", x, y0, z, [0.2, 0.38, 0.28], DARK, { model: "table-lamp", support: "top" }),
 ];
 const lampStand = (x: number, z: number): FurnitureBox =>
-  make("bedside_lamp", "lamp-stand", x, 0, z, [0.4, 0.55, 0.4], WOOD_LIGHT);
+  make("bedside_lamp", "lamp-stand", x, 0, z, [0.4, 0.5, 0.4], WOOD_LIGHT);
 
 const LIVING: Frame = {
   sofa: [make("sofa", "sofa", -0.3, 0, -2.05, [1.9, 0.85, 0.8], "#7d8fa6", { model: "sofa" })],
   armchair: [make("armchair", "armchair", 1.5, 0, -0.6, [0.75, 1.0, 0.82], "#7d8fa6", { model: "armchair", rotationY: -QUARTER })],
-  coffee_table: [make("coffee_table", "coffee-table", -0.3, 0, -0.9, [1.1, 0.42, 0.55], WOOD, { model: "coffee-table", rotationY: QUARTER })],
+  coffee_table: [make("coffee_table", "coffee-table", -0.3, 0, -0.9, [1.2, 0.39, 0.6], WOOD, { model: "coffee-table", rotationY: QUARTER })],
   tv_unit: [
     make("tv_unit", "tv-unit", -2.7, 0, -0.7, [0.45, 0.55, 1.8], WOOD_LIGHT),
     make("tv_unit", "television", -2.7, 0.55, -0.7, [0.36, 0.42, 0.42], "#1d2329", { model: "television", rotationY: QUARTER, support: "top" }),
@@ -64,7 +64,7 @@ const LIVING: Frame = {
     make("floor_lamp", "floor-lamp-shade", -1.6, 1.4, -2.2, [0.4, 0.3, 0.4], LAMP, { support: "top" }),
   ],
   plants: [make("plants", "plant", -2.6, 0, -2.15, [0.5, 1.1, 0.5], "#5e8c61", { model: "potted-plant" })],
-  shelves: [make("shelves", "shelves", 2.725, 0, 0.6, [0.45, 1.6, 1.2], DARK, { model: "shelves", rotationY: -QUARTER })],
+  shelves: [make("shelves", "shelves", 2.725, 0, 0.6, [0.45, 1.2, 1.2], DARK, { model: "shelves", rotationY: -QUARTER })],
   // Open kitchen (back-right corner)
   counter_stove: [
     make("counter_stove", "counter", 1.95, 0, -2.2, [1.9, 0.88, 0.6], WOOD_LIGHT),
@@ -73,15 +73,15 @@ const LIVING: Frame = {
   ],
   fridge: [make("fridge", "fridge", 2.6, 0, -1.3, [0.7, 1.8, 0.7], FRIDGE, { radius: 0.05 })],
   storage_cabinets: [make("storage_cabinets", "wall-cabinets", 1.95, 1.45, -2.32, [1.9, 0.65, 0.35], WOOD_LIGHT, { support: "wall" })],
-  dining_table: [make("dining_table", "dining-table", -0.6, 0, 1.3, [1.7, 0.75, 1.05], WOOD, { model: "dining-table" })],
+  dining_table: [make("dining_table", "dining-table", -0.6, 0, 1.3, [1.7, 0.66, 1.05], WOOD, { model: "dining-table" })],
   chairs: [
     make("chairs", "chair-1", -1.0, 0, 2.2, [0.45, 0.85, 0.5], DARK, { model: "school-chair", rotationY: Math.PI }),
     make("chairs", "chair-2", -0.2, 0, 2.2, [0.45, 0.85, 0.5], DARK, { model: "school-chair", rotationY: Math.PI }),
   ],
   // Studio sleeping area (front-right)
   bed: [make("bed", "bed", 0.95, 0, 1.5, [0.9, 0.95, 1.95], "#a3b2c4", { model: "day-bed", rotationY: QUARTER })],
-  side_tables: [make("side_tables", "side-table", 1.75, 0, 2.1, [0.5, 0.55, 0.45], WOOD, { model: "side-table" })],
-  bedside_lamp: lamp(1.75, 2.1),
+  side_tables: [make("side_tables", "side-table", 1.75, 0, 2.1, [0.5, 0.5, 0.45], WOOD, { model: "side-table" })],
+  bedside_lamp: lamp(1.83, 2.1),
   wardrobe: [make("wardrobe", "wardrobe", 2.65, 0, 1.85, [0.55, 0.9, 1.0], WOOD, { model: "drawer", rotationY: -QUARTER })],
   chair: [make("chair", "chair", -1.9, 0, 0.5, [0.55, 1.1, 0.55], WOOD, { model: "wooden-armchair", rotationY: QUARTER })],
   // Door opens into the room (front-left)
@@ -92,8 +92,8 @@ const LIVING: Frame = {
 
 const BEDROOM: Frame = {
   bed: [make("bed", "bed", 0.4, 0, -2.0, [2.0, 0.95, 0.9], "#a3b2c4", { model: "day-bed" })],
-  side_tables: [make("side_tables", "side-table", 1.85, 0, -2.15, [0.5, 0.55, 0.45], WOOD, { model: "side-table" })],
-  bedside_lamp: lamp(1.85, -2.15),
+  side_tables: [make("side_tables", "side-table", 1.85, 0, -2.15, [0.5, 0.5, 0.45], WOOD, { model: "side-table" })],
+  bedside_lamp: lamp(1.93, -2.15),
   wardrobe: [make("wardrobe", "wardrobe", -2.65, 0, -1.0, [0.55, 0.9, 1.0], WOOD, { model: "drawer", rotationY: QUARTER })],
   rug: [make("rug", "rug", 0.3, 0, -0.6, [1.8, 0.02, 1.2], RUG, { support: "flat", radius: 0 })],
   chair: [make("chair", "chair", 2.2, 0, 0.8, [0.55, 1.1, 0.55], WOOD, { model: "wooden-armchair", rotationY: -QUARTER })],
@@ -107,7 +107,7 @@ const KITCHEN: Frame = {
   ],
   fridge: [make("fridge", "fridge", 2.6, 0, -1.2, [0.7, 1.8, 0.7], FRIDGE, { radius: 0.05 })],
   storage_cabinets: [make("storage_cabinets", "cabinet", -2.65, 0, -0.6, [0.6, 1.9, 1.6], WOOD, { model: "vintage-cabinet", rotationY: QUARTER })],
-  dining_table: [make("dining_table", "dining-table", -0.3, 0, 0.4, [1.7, 0.75, 1.05], WOOD, { model: "dining-table" })],
+  dining_table: [make("dining_table", "dining-table", -0.3, 0, 0.4, [1.7, 0.66, 1.05], WOOD, { model: "dining-table" })],
   chairs: [
     make("chairs", "chair-1", -0.7, 0, 1.3, [0.45, 0.85, 0.5], DARK, { model: "school-chair", rotationY: Math.PI }),
     make("chairs", "chair-2", 0.1, 0, 1.3, [0.45, 0.85, 0.5], DARK, { model: "school-chair", rotationY: Math.PI }),
@@ -123,7 +123,12 @@ const BATHROOM: Frame = {
     make("toilet_indian", "foot-rest-r", 1.1, 0.08, -1.75, [0.12, 0.02, 0.22], "#dcdad5", { support: "top", radius: 0 }),
   ],
   washbasin: [make("washbasin", "washbasin", -0.2, 0, -2.15, [0.82, 0.86, 0.65], CERAMIC, { model: "sink" })],
-  mirror: [make("mirror", "mirror", -0.2, 1.15, -2.47, [0.6, 0.75, 0.03], GLASS, { support: "wall", radius: 0 })],
+  // No mirror model was available: a framed pane.
+  mirror: [
+    // Left of the window frame (x -0.2), over the basin.
+    make("mirror", "mirror", -0.44, 1.05, -2.45, [0.46, 0.7, 0.025], "#8a7f72", { support: "wall", radius: 0.01 }),
+    make("mirror", "mirror-glass", -0.44, 1.09, -2.432, [0.38, 0.62, 0.01], "#dfeff4", { support: "wall", radius: 0 }),
+  ],
   shower: [
     make("shower", "shower-tray", -2.1, 0, -1.6, [1.6, 0.06, 1.6], "#f1efea"),
     make("shower", "shower-glass", -1.28, 0.06, -2.0, [0.03, 1.9, 0.8], GLASS, { opacity: 0.35, support: "top", radius: 0 }),
@@ -133,8 +138,9 @@ const BATHROOM: Frame = {
     make("bucket_mug", "bucket", -1.0, 0, -2.2, [0.42, 0.4, 0.42], "#c0392b", { model: "bucket" }),
     make("bucket_mug", "mug", -1.0, 0.4, -2.2, [0.1, 0.11, 0.1], "#2f6f9e", { support: "top", radius: 0.02 }),
   ],
-  stool: [make("stool", "stool", -1.0, 0, -1.4, [0.35, 0.45, 0.35], "#5b9bd5")],
-  towel_rail: [make("towel_rail", "towel-rail", 0.95, 0.9, -2.4, [0.93, 0.7, 0.2], "#cccccc", { model: "towel-rail", support: "wall", radius: 0 })],
+  stool: [make("stool", "stool", -1.0, 0, -1.4, [0.35, 0.45, 0.35], WOOD, { model: "stool" })],
+  // On the right wall, clear of the window and the toilet's grab bar zone.
+  towel_rail: [make("towel_rail", "towel-rail", 2.86, 0.9, -0.6, [0.2, 0.7, 0.93], "#cccccc", { model: "towel-rail", rotationY: -QUARTER, support: "wall", radius: 0 })],
   bath_mat: [make("bath_mat", "bath-mat", 0.4, 0, -1.2, [0.8, 0.02, 0.5], "#7fb3d5", { support: "flat", radius: 0 })],
 };
 
@@ -153,10 +159,7 @@ const HOSE = "#3f8f4f";
 // Garden: house wall at the back with the door in the middle; path runs x -0.5..0.5 to the front.
 const GARDEN: Frame = {
   bench: [make("bench", "bench", -2.0, 0, -2.1, [1.2, 0.9, 0.5], WOOD, { model: "garden-bench" })],
-  garden_table: [
-    make("garden_table", "table-stand", 1.9, 0, 0.2, [0.12, 0.68, 0.12], DARK, { radius: 0 }),
-    make("garden_table", "table-top", 1.9, 0.68, 0.2, [0.8, 0.04, 0.8], WOOD, { support: "top", radius: 0.2 }),
-  ],
+  garden_table: [make("garden_table", "table", 1.9, 0, 0.2, [0.8, 0.75, 0.8], WOOD, { model: "round-table" })],
   garden_chairs: [
     make("garden_chairs", "garden-chair-1", 1.9, 0, -0.65, [0.6, 0.85, 0.6], "#e8e6e1", { model: "plastic-chair" }),
     make("garden_chairs", "garden-chair-2", 1.9, 0, 1.05, [0.6, 0.85, 0.6], "#e8e6e1", { model: "plastic-chair", rotationY: Math.PI }),
@@ -184,6 +187,26 @@ export const FRAMES: Partial<Record<RoomType, Frame>> = {
   bathroom: BATHROOM,
   entrance: ENTRANCE,
   garden: GARDEN,
+};
+
+/**
+ * What an illustrative room shows when the user hasn't told us their furniture
+ * (or skipped the question). Merged rooms add their own defaults.
+ */
+export const DEFAULT_ITEMS: Partial<Record<RoomType, readonly FurnitureItem[]>> = {
+  living_room: ["sofa", "armchair", "coffee_table", "tv_unit", "plants", "shelves"],
+  bedroom: ["bed", "side_tables", "bedside_lamp", "wardrobe", "chair"],
+  kitchen: ["counter_stove", "fridge", "storage_cabinets", "dining_table", "chairs"],
+  bathroom: ["toilet_western", "washbasin", "mirror", "shower", "towel_rail", "bucket_mug"],
+  entrance: ["shoe_rack", "door_mat", "cabinet"],
+  garden: ["bench", "garden_table", "garden_chairs", "plant_pots"],
+};
+
+/** Defaults a merged room brings into the living room (open kitchen, entrance, studio bed). */
+export const MERGED_DEFAULT_ITEMS: Partial<Record<RoomType, readonly FurnitureItem[]>> = {
+  kitchen: ["counter_stove"],
+  entrance: ["shoe_rack"],
+  bedroom: ["bed"],
 };
 
 /**

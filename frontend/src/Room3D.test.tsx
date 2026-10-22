@@ -115,9 +115,12 @@ describe("3D room view — furniture and labels", () => {
     expect(toggle.getAttribute("aria-pressed")).toBe("true");
     expect(screen.getByText(/Shows the furniture you told us about/)).toBeTruthy();
 
+    // The legend under the view holds each pin's full text, in pin order.
     const list = within(screen.getByRole("list", { name: "All labels in this view" }));
-    expect(list.getByText("Room: Living room")).toBeTruthy();
-    expect(list.getByRole("button", { name: "Narrow path: keep this path clear" })).toBeTruthy();
+    expect(list.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
+      "1Narrow path: keep this path clear",
+      "2Your sofa: move it back to widen the path",
+    ]);
     fireEvent.click(list.getByRole("button", { name: "Your sofa: move it back to widen the path" }));
     // Selecting a label highlights its checklist items.
     expect(document.querySelectorAll("li.plan-item[data-selected]").length).toBeGreaterThan(0);

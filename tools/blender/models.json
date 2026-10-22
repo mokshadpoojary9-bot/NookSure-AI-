@@ -431,6 +431,175 @@
       "source": "Poly Haven (wooden_bucket_02)",
       "author": "Poly Haven",
       "license": "CC0"
+    },
+    {
+      "id": "books",
+      "name": "Book set",
+      "room": "living",
+      "item": "decor",
+      "src": {
+        "zip": "book_encyclopedia_set_01_4k.gltf.zip"
+      },
+      "maxTris": 8000,
+      "source": "Poly Haven (book_encyclopedia_set_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "tea-set",
+      "name": "Tea set",
+      "room": "kitchen",
+      "item": "decor",
+      "src": {
+        "blendFolder": "tea_set_01_4k.blend"
+      },
+      "maxTris": 20000,
+      "source": "Poly Haven (tea_set_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "pears",
+      "name": "Bowl of pears",
+      "room": "kitchen",
+      "item": "decor",
+      "src": {
+        "zip": "food_pears_asian_01_4k.blend.zip"
+      },
+      "maxTris": 15000,
+      "source": "Poly Haven (food_pears_asian_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "brass-pot",
+      "name": "Brass pot",
+      "room": "kitchen",
+      "item": "decor",
+      "src": {
+        "zip": "brass_pot_01_4k.blend.zip"
+      },
+      "maxTris": 15000,
+      "source": "Poly Haven (brass_pot_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "brass-pan",
+      "name": "Brass pan",
+      "room": "kitchen",
+      "item": "decor",
+      "src": {
+        "zip": "brass_pan_01_4k.blend.zip"
+      },
+      "maxTris": 15000,
+      "source": "Poly Haven (brass_pan_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "thermos",
+      "name": "Thermos flask",
+      "room": "kitchen",
+      "item": "decor",
+      "src": {
+        "blendFolder": "plastic_thermos_4k.blend"
+      },
+      "maxTris": 10000,
+      "source": "Poly Haven (plastic_thermos)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "stool",
+      "name": "Wooden stool",
+      "room": "bathroom",
+      "item": "stool",
+      "src": {
+        "blendFolder": "WoodenTable_02_4k.blend"
+      },
+      "maxTris": 20000,
+      "source": "Poly Haven (WoodenTable_02)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "laptop",
+      "name": "Laptop",
+      "room": "bedroom",
+      "item": "decor",
+      "src": {
+        "blendFolder": "classic_laptop_4k.blend"
+      },
+      "maxTris": 15000,
+      "source": "Poly Haven (classic_laptop)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "fancy-frame",
+      "name": "Picture frame (ornate)",
+      "room": "bedroom",
+      "item": "decor",
+      "src": {
+        "zip": "fancy_picture_frame_01_4k.gltf.zip"
+      },
+      "maxTris": 15000,
+      "source": "Poly Haven (fancy_picture_frame_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "plunger",
+      "name": "Plunger",
+      "room": "bathroom",
+      "item": "decor",
+      "src": {
+        "zip": "plunger_4k.gltf.zip"
+      },
+      "maxTris": 8000,
+      "source": "Poly Haven (plunger)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "round-table",
+      "name": "Round garden table",
+      "room": "garden",
+      "item": "garden_table",
+      "src": {
+        "zip": "round_wooden_table_02_4k.gltf.zip"
+      },
+      "maxTris": 20000,
+      "source": "Poly Haven (round_wooden_table_02)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "flower-bed",
+      "name": "Ground plants",
+      "room": "garden",
+      "item": "decor",
+      "src": {
+        "zip": "periwinkle_plant_4k.gltf.zip"
+      },
+      "maxTris": 30000,
+      "source": "Poly Haven (periwinkle_plant)",
+      "author": "Poly Haven",
+      "license": "CC0"
+    },
+    {
+      "id": "grass-tuft",
+      "name": "Grass tuft",
+      "room": "garden",
+      "item": "decor",
+      "src": {
+        "zip": "grass_medium_01_4k.gltf.zip"
+      },
+      "maxTris": 15000,
+      "source": "Poly Haven (grass_medium_01)",
+      "author": "Poly Haven",
+      "license": "CC0"
     }
   ],
   "skipped": [
@@ -447,20 +616,24 @@
       "reason": "thin articulated arm, barely visible and 1.4 m tall — floor lamp uses a simple shape"
     },
     {
-      "file": "books",
-      "reason": "67k triangles / 3 MB for decoration only"
-    },
-    {
-      "file": "plant-pot",
-      "reason": "periwinkle_plant is a spread of loose ground plants, not a pot — garden plant pots reuse the potted plant model"
-    },
-    {
       "file": "shrub",
       "reason": "shrub_sorrel_01 is a few tiny sprigs (6 cm) — not useful at room scale"
     },
     {
       "file": "garden-light",
       "reason": "street_lamp_02 is a wall-mounted lantern; its mounting side couldn't be verified — garden lights use a simple shape"
+    },
+    {
+      "file": "office-desk",
+      "reason": "metal_office_desk is a 2 m office desk — no matching furniture question, and adding unasked floor furniture would contradict the user’s answers"
+    },
+    {
+      "file": "small-tree",
+      "reason": "tree_small_02 has 2M triangles; decimating to web size (<5 MB) leaves a sparse, broken canopy — the low-branch marker keeps the simple tree"
+    },
+    {
+      "file": "rock",
+      "reason": "rock_09 is a 15 cm pebble — not visible at room scale; garden rocks use the mossy rock set"
     }
   ]
 }

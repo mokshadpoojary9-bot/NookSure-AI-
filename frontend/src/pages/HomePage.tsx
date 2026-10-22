@@ -92,7 +92,7 @@ export function HomePage() {
           {preview ? (
             <>
               <p className="badge">Example room — not your home</p>
-              <LazyRoomView3D room="living_room" profile={EXAMPLE} done={[]} />
+              <LazyRoomView3D room="living_room" profile={EXAMPLE} done={[]} maxPins={4} />
             </>
           ) : (
             <div className="preview-placeholder" aria-hidden="true">
