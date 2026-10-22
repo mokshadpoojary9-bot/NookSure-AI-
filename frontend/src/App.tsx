@@ -1,5 +1,6 @@
 import { AuthProvider } from "./auth/AuthContext";
 import type { AuthService } from "./auth/authService";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Layout } from "./components/Layout";
 import { AssistantPage } from "./pages/AssistantPage";
 import { CreditsPage } from "./pages/CreditsPage";
@@ -14,12 +15,15 @@ export function App({ authService }: { authService?: AuthService } = {}) {
   return (
     <AuthProvider service={authService}>
       <Layout route={route}>
-        {route === "/" && <HomePage />}
-        {route === "/plan" && <PlannerPage />}
-        {route === "/saved" && <SavedPlansPage />}
-        {route === "/assistant" && <AssistantPage />}
-        {route === "/safety" && <SafetyPage />}
-        {route === "/credits" && <CreditsPage />}
+        {/* Keyed by route so navigating away from a crashed page clears the error. */}
+        <ErrorBoundary key={route}>
+          {route === "/" && <HomePage />}
+          {route === "/plan" && <PlannerPage />}
+          {route === "/saved" && <SavedPlansPage />}
+          {route === "/assistant" && <AssistantPage />}
+          {route === "/safety" && <SafetyPage />}
+          {route === "/credits" && <CreditsPage />}
+        </ErrorBoundary>
       </Layout>
     </AuthProvider>
   );

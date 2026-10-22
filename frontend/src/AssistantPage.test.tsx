@@ -1,6 +1,8 @@
+import { StrictMode } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
+import type { AuthService } from "./auth/authService";
 import type { RecognitionLike } from "./speech/useSpeechRecognition";
 
 const reply = (body: unknown, status = 200) =>
@@ -108,7 +110,56 @@ describe("assistant chat", () => {
     render(<App />);
     type("Hello");
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
-    expect((await screen.findByRole("alert")).textContent).toMatch(/Couldn't reach the NookSure assistant/);
+    expect((await screen.findByRole("alert")).textContent).toMatch(/Assistant is offline, please try again/);
+  });
+
+  it("says the assistant is offline when something other than the API answers", async () => {
+    fetchMock.mockReturnValue(Promise.resolve(new Response("<html>Bad Gateway</html>", { status: 502 })));
+    render(<App />);
+    type("Hello");
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Assistant is offline, please try again.");
+  });
+
+  it("works the same for a signed-in user", async () => {
+    const user = { uid: "u1", displayName: "Asha", email: "asha@example.com", photoURL: null };
+    const service: AuthService = {
+      configured: true,
+      onChange: (cb) => {
+        cb(user);
+        return () => {};
+      },
+      signInWithGoogle: async () => {},
+      signOut: async () => {},
+    };
+    fetchMock.mockReturnValue(reply({ reply: "Add a night light.", analysisMode: "live", urgent: false }));
+    render(<App authService={service} />);
+    expect(screen.getByText("Signed in as Asha")).toBeTruthy();
+    type("Night-time tips?");
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    expect(await screen.findByText("Add a night light.")).toBeTruthy();
+  });
+
+  // Regression: Chrome 140+ returns a Promise from scrollIntoView; returning it from an
+  // effect made React call it as a cleanup ("destroy is not a function") and blanked the app.
+  it("survives browsers where scrollIntoView returns a Promise", async () => {
+    const proto = Element.prototype as unknown as { scrollIntoView?: unknown };
+    const original = proto.scrollIntoView;
+    proto.scrollIntoView = () => Promise.resolve();
+    try {
+      fetchMock.mockReturnValue(reply({ reply: "Clear the hallway.", analysisMode: "live", urgent: false }));
+      const view = render(
+        <StrictMode>
+          <App />
+        </StrictMode>,
+      );
+      type("Hallway?");
+      fireEvent.click(screen.getByRole("button", { name: "Send" }));
+      expect(await screen.findByText("Clear the hallway.")).toBeTruthy();
+      expect(() => view.unmount()).not.toThrow();
+    } finally {
+      proto.scrollIntoView = original;
+    }
   });
 });
 

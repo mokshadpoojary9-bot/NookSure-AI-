@@ -2,6 +2,8 @@ import { ApiErrorSchema, CHAT_LIMITS, ChatResponseSchema, type ChatMessage, type
 
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
 
+export const OFFLINE_MESSAGE = "Assistant is offline, please try again.";
+
 export class ChatRequestError extends Error {
   override readonly name = "ChatRequestError";
 }
@@ -18,13 +20,13 @@ export async function sendChat(messages: ChatMessage[], signal?: AbortSignal): P
     });
   } catch (err) {
     if ((err as Error)?.name === "AbortError") throw err;
-    throw new ChatRequestError("Couldn't reach the NookSure assistant. Check your connection, or make sure the backend is running.");
+    throw new ChatRequestError(OFFLINE_MESSAGE);
   }
 
   const body: unknown = await res.json().catch(() => null);
   if (!res.ok) {
     const parsed = ApiErrorSchema.safeParse(body);
-    throw new ChatRequestError(parsed.success ? parsed.data.error.message : "The assistant is unavailable right now.");
+    throw new ChatRequestError(parsed.success ? parsed.data.error.message : OFFLINE_MESSAGE);
   }
   const parsed = ChatResponseSchema.safeParse(body);
   if (!parsed.success) throw new ChatRequestError("The assistant sent an unexpected response.");

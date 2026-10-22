@@ -36,7 +36,11 @@ export function AssistantPage() {
   });
 
   useEffect(() => () => abortRef.current?.abort(), []);
-  useEffect(() => endRef.current?.scrollIntoView?.({ block: "nearest" }), [turns, pending]);
+  // Block body on purpose: newer Chrome returns a Promise from scrollIntoView, and
+  // React would treat that return value as a cleanup function and crash.
+  useEffect(() => {
+    endRef.current?.scrollIntoView?.({ block: "nearest" });
+  }, [turns, pending]);
 
   const sampleMode = turns.some((t) => t.mode === "fixture");
 
