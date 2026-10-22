@@ -188,6 +188,34 @@ describe("GeminiProvider", () => {
     expect(err.message).not.toContain("raw upstream text");
   });
 
+  it("retries a 503/504 up to twice, then succeeds", async () => {
+    const generateContent = vi
+      .fn()
+      .mockRejectedValueOnce(Object.assign(new Error("overloaded"), { status: 503 }))
+      .mockRejectedValueOnce(Object.assign(new Error("deadline"), { status: 504 }))
+      .mockResolvedValueOnce({ text: "Third time lucky." });
+    const client = { models: { generateContent } } as unknown as GeminiClient;
+    const reply = await new GeminiProvider({ ...options, retryDelayMs: 1 }, client).chat([{ role: "user", content: "hi" }]);
+    expect(reply).toBe("Third time lucky.");
+    expect(generateContent).toHaveBeenCalledTimes(3);
+  });
+
+  it("gives up after 2 retries of a persistent 503", async () => {
+    const generateContent = vi.fn(async () => Promise.reject(Object.assign(new Error("overloaded"), { status: 503 })));
+    const client = { models: { generateContent } } as unknown as GeminiClient;
+    const err = await new GeminiProvider({ ...options, retryDelayMs: 1 }, client).chat([{ role: "user", content: "hi" }]).catch((e) => e);
+    expect(err).toBeInstanceOf(ProviderError);
+    expect(err.status).toBe(503);
+    expect(generateContent).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not retry non-transient errors", async () => {
+    const generateContent = vi.fn(async () => Promise.reject(Object.assign(new Error("bad key"), { status: 400 })));
+    const client = { models: { generateContent } } as unknown as GeminiClient;
+    await new GeminiProvider({ ...options, retryDelayMs: 1 }, client).chat([{ role: "user", content: "hi" }]).catch(() => {});
+    expect(generateContent).toHaveBeenCalledTimes(1);
+  });
+
   it("turns a timed-out request into ProviderTimeoutError", async () => {
     const generateContent = vi.fn(
       ({ config }: { config: { abortSignal: AbortSignal } }) =>
