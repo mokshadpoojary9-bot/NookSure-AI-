@@ -51,7 +51,8 @@ export function Layout({ route, children }: { route: Route; children: ReactNode 
           occupational therapist or qualified installer.
         </p>
         <p className="footer-links">
-          <a href={href("/safety")}>Safety principles</a> · <a href={href("/credits")}>Credits</a>
+          <a href={href("/safety")}>Safety principles</a> · <a href={href("/privacy")}>Privacy</a> ·{" "}
+          <a href={href("/terms")}>Terms</a> · <a href={href("/credits")}>Credits</a>
         </p>
       </footer>
     </div>

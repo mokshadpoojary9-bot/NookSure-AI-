@@ -6,7 +6,9 @@ import { Layout } from "./components/Layout";
 import { AssistantPage } from "./pages/AssistantPage";
 import { CreditsPage } from "./pages/CreditsPage";
 import { PlannerPage } from "./pages/PlannerPage";
+import { PrivacyPage } from "./pages/PrivacyPage";
 import { SavedPlansPage } from "./pages/SavedPlansPage";
+import { TermsPage } from "./pages/TermsPage";
 import { useRoute } from "./router";
 
 // The landing and safety pages carry animation code (framer-motion); loading them as their
@@ -35,6 +37,8 @@ export function App({ authService }: { authService?: AuthService } = {}) {
             </Suspense>
           )}
           {route === "/credits" && <CreditsPage />}
+          {route === "/privacy" && <PrivacyPage />}
+          {route === "/terms" && <TermsPage />}
         </ErrorBoundary>
       </Layout>
     </AuthProvider>

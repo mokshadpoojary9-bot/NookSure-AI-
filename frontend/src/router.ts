@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
-export type Route = "/" | "/plan" | "/saved" | "/assistant" | "/safety" | "/credits";
+export type Route = "/" | "/plan" | "/saved" | "/assistant" | "/safety" | "/credits" | "/privacy" | "/terms";
 
-const ROUTES: readonly Route[] = ["/", "/plan", "/saved", "/assistant", "/safety", "/credits"];
+const ROUTES: readonly Route[] = ["/", "/plan", "/saved", "/assistant", "/safety", "/credits", "/privacy", "/terms"];
 
 function readRoute(): Route {
   const path = window.location.hash.replace(/^#/, "") || "/";
