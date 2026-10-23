@@ -24,7 +24,6 @@ const WOOD_LIGHT = "#c9a27e";
 const DARK = "#4a525c";
 const WORKTOP = "#d9d4ca";
 const CERAMIC = "#fbfaf7";
-const GLASS = "#cfe3ea";
 const FRIDGE = "#e9ecef";
 const RUG = "#b9785f";
 const MAT = "#8c7a6b";
@@ -91,7 +90,8 @@ const LIVING: Frame = {
 };
 
 const BEDROOM: Frame = {
-  bed: [make("bed", "bed", 0.4, 0, -2.0, [2.0, 0.95, 0.9], "#a3b2c4", { model: "day-bed" })],
+  // Headboard against the back wall.
+  bed: [make("bed", "bed", 0.4, 0, -1.45, [1.6, 1.0, 2.0], "#a3b2c4", { model: "bed" })],
   side_tables: [make("side_tables", "side-table", 1.85, 0, -2.15, [0.5, 0.5, 0.45], WOOD, { model: "side-table" })],
   bedside_lamp: lamp(1.93, -2.15),
   wardrobe: [make("wardrobe", "wardrobe", -2.65, 0, -1.0, [0.55, 0.9, 1.0], WOOD, { model: "drawer", rotationY: QUARTER })],
@@ -130,8 +130,8 @@ const BATHROOM: Frame = {
     make("mirror", "mirror-glass", -0.44, 1.09, -2.432, [0.38, 0.62, 0.01], "#dfeff4", { support: "wall", radius: 0 }),
   ],
   shower: [
-    make("shower", "shower-tray", -2.1, 0, -1.6, [1.6, 0.06, 1.6], "#f1efea"),
-    make("shower", "shower-glass", -1.28, 0.06, -2.0, [0.03, 1.9, 0.8], GLASS, { opacity: 0.35, support: "top", radius: 0 }),
+    // Shower cabin in the back-left corner, door facing the room.
+    make("shower", "shower", -2.3, 0, -1.95, [1.2, 2.1, 1.0], "#f1efea", { model: "shower-cabin" }),
   ],
   bathtub: [make("bathtub", "bathtub", 2.55, 0, 0.9, [0.76, 0.62, 1.6], CERAMIC, { model: "bathtub", rotationY: -QUARTER })],
   bucket_mug: [

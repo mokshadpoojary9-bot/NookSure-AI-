@@ -1,4 +1,5 @@
 // Batch-convert the assets listed in models.json with Blender (one process per model).
+// Sources: src.blendFolder / src.gltfFolder (extracted folders), src.zip, or src.glb (a loose .glb).
 // Originals in Downloads are never modified: zips are extracted to WORK, .blend files are opened read-only.
 //
 //   node tools/blender/build-models.mjs [--only id1,id2] [--blender <path>] [--downloads <dir>] [--work <dir>]
@@ -45,6 +46,10 @@ const findFile = (dir, re) => {
 };
 
 function sourceFile(src) {
+  if (src.glb) {
+    const f = path.join(DOWNLOADS, src.glb);
+    return fs.existsSync(f) ? f : null;
+  }
   if (src.blendFolder) return findFile(path.join(DOWNLOADS, src.blendFolder), /\.blend$/i);
   if (src.gltfFolder) return findFile(path.join(DOWNLOADS, src.gltfFolder), /\.gltf$/i);
   if (src.zip) {

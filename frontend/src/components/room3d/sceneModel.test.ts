@@ -107,9 +107,9 @@ describe("real furniture models", () => {
     const modelled = (room: (typeof RoomTypeSchema.options)[number]) =>
       new Set(buildRoomScene(room, empty(room), []).furniture.filter((b) => b.model).map((b) => b.model));
     for (const id of ["sofa", "armchair", "coffee-table", "television", "potted-plant", "shelves"]) expect(modelled("living_room").has(id), id).toBe(true);
-    for (const id of ["day-bed", "side-table", "table-lamp", "drawer", "wooden-armchair"]) expect(modelled("bedroom").has(id), id).toBe(true);
+    for (const id of ["bed", "side-table", "table-lamp", "drawer", "wooden-armchair"]) expect(modelled("bedroom").has(id), id).toBe(true);
     for (const id of ["dining-table", "school-chair", "vintage-cabinet", "microwave", "kettle", "brass-pan"]) expect(modelled("kitchen").has(id), id).toBe(true);
-    for (const id of ["toilet", "sink", "towel-rail", "bucket", "towel-stack"]) expect(modelled("bathroom").has(id), id).toBe(true);
+    for (const id of ["toilet", "sink", "shower-cabin", "towel-rail", "bucket", "towel-stack"]) expect(modelled("bathroom").has(id), id).toBe(true);
     for (const id of ["garden-bench", "round-table", "plastic-chair", "potted-plant", "mossy-rocks", "flower-bed"]) expect(modelled("garden").has(id), id).toBe(true);
     expect(modelled("balcony").has("outdoor-set")).toBe(true);
   });
@@ -121,10 +121,11 @@ describe("real furniture models", () => {
         furniture: Object.fromEntries(Object.entries(items).map(([r, i]) => [r, { items: i, other: "", skipped: false }])) as HomeProfile["furniture"],
       });
     const p = all({
-      living_room: ["sofa", "armchair", "coffee_table", "tv_unit", "plants", "shelves"],
+      // "bed" in the living room is the studio sleeping area (day bed).
+      living_room: ["sofa", "armchair", "coffee_table", "tv_unit", "plants", "shelves", "bed"],
       bedroom: ["bed", "side_tables", "bedside_lamp", "wardrobe", "chair"],
       kitchen: ["counter_stove", "storage_cabinets", "dining_table", "chairs"],
-      bathroom: ["toilet_western", "washbasin", "bathtub", "bucket_mug", "stool", "towel_rail"],
+      bathroom: ["toilet_western", "washbasin", "shower", "bathtub", "bucket_mug", "stool", "towel_rail"],
       garden: ["bench", "garden_table", "garden_chairs", "plant_pots"],
     });
     const used = new Set(

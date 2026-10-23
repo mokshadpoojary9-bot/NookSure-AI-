@@ -305,6 +305,8 @@ APIs and WebGL are mocked, so they test the app’s own logic rather than the li
   - [Towel stack](https://sketchfab.com/3d-models/towel-stack-56ebf3bf8cb445c9a743d3bf31e314bd) by matousekfoto
   - [Toilet paper holder](https://sketchfab.com/3d-models/toilet-paper-holder-12mb-a725f835410b418ab6be823f29caf2a6) by Mehdi Shahsavan
   - [Plastic bucket](https://sketchfab.com/3d-models/plastic-bucket-006d0f237b4141ac93960fa51d6f0634) by MaX3Dd
+  - [Bed](https://sketchfab.com/3d-models/bed-b8c16d4b69f64335b46379b119b102b4) by rickmaolly
+  - [Shower Cabin](https://sketchfab.com/3d-models/shower-cabin-e2c6a8dd490e4e4398378e1f6c9121a8) by Heliona
 
 Built with help from [Claude Code](https://claude.com/claude-code).
 

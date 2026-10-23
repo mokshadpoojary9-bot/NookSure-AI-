@@ -600,6 +600,33 @@
       "source": "Poly Haven (grass_medium_01)",
       "author": "Poly Haven",
       "license": "CC0"
+    },
+    {
+      "id": "bed",
+      "name": "Bed",
+      "room": "bedroom",
+      "item": "bed",
+      "src": {
+        "glb": "bed.glb"
+      },
+      "maxTris": 25000,
+      "source": "Sketchfab: https://sketchfab.com/3d-models/bed-b8c16d4b69f64335b46379b119b102b4",
+      "author": "rickmaolly",
+      "license": "CC-BY-4.0",
+      "rotateDeg": 180
+    },
+    {
+      "id": "shower-cabin",
+      "name": "Shower cabin",
+      "room": "bathroom",
+      "item": "shower",
+      "src": {
+        "glb": "shower_cabin.glb"
+      },
+      "maxTris": 25000,
+      "source": "Sketchfab: https://sketchfab.com/3d-models/shower-cabin-e2c6a8dd490e4e4398378e1f6c9121a8",
+      "author": "Heliona",
+      "license": "CC-BY-4.0"
     }
   ],
   "skipped": [
@@ -634,6 +661,22 @@
     {
       "file": "rock",
       "reason": "rock_09 is a 15 cm pebble — not visible at room scale; garden rocks use the mossy rock set"
+    },
+    {
+      "file": "bed-06",
+      "reason": "bed_06.glb (Sketchfab, Doaa Sheha) is a whole bedroom set — bed, side tables, lamps and a rug — at the wrong scale; its extra pieces would contradict the user’s answers. bed.glb used instead"
+    },
+    {
+      "file": "bathroom-shower",
+      "reason": "bathroom_shower.glb (Sketchfab, The Motion Tree) is only a shower mixer column, exported at 38 m tall; shower_cabin.glb used instead"
+    },
+    {
+      "file": "kungsara-bench",
+      "reason": "the_kungsara_bench.glb (Sketchfab, Historiska) is a 2.15 m carved historical bench — doesn’t read as a garden bench; the existing Poly Haven garden bench is kept"
+    },
+    {
+      "file": "fridge-zil",
+      "reason": "fridge_zil.glb (Sketchfab, nikitakorneev89) is CC-BY-NC-ND-4.0 — non-commercial, no derivatives; not used, the fridge stays a simple shape"
     }
   ]
 }
