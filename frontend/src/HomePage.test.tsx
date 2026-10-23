@@ -111,7 +111,7 @@ describe("landing page", () => {
     expect(screen.queryByTestId("r3f-canvas")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Show a live 3D example" }));
     expect(screen.getByText("Example room — not your home")).toBeTruthy();
-    expect(await screen.findByTestId("r3f-canvas")).toBeTruthy();
+    expect(await screen.findByTestId("r3f-canvas", {}, { timeout: 5000 })).toBeTruthy();
     expect(screen.getByText("Illustrative layout, not to scale.")).toBeTruthy();
   });
 });

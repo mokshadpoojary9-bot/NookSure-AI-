@@ -7,12 +7,12 @@ import { AssistantPage } from "./pages/AssistantPage";
 import { CreditsPage } from "./pages/CreditsPage";
 import { PlannerPage } from "./pages/PlannerPage";
 import { SavedPlansPage } from "./pages/SavedPlansPage";
-import { SafetyPage } from "./pages/SafetyPage";
 import { useRoute } from "./router";
 
-// The landing page carries its own animation code (framer-motion); loading it as its own
-// chunk keeps that out of every other page.
+// The landing and safety pages carry animation code (framer-motion); loading them as their
+// own chunks keeps that out of every other page.
 const HomePage = lazy(() => import("./pages/HomePage").then((m) => ({ default: m.HomePage })));
+const SafetyPage = lazy(() => import("./pages/SafetyPage").then((m) => ({ default: m.SafetyPage })));
 
 export function App({ authService }: { authService?: AuthService } = {}) {
   const route = useRoute();
@@ -29,7 +29,11 @@ export function App({ authService }: { authService?: AuthService } = {}) {
           {route === "/plan" && <PlannerPage />}
           {route === "/saved" && <SavedPlansPage />}
           {route === "/assistant" && <AssistantPage />}
-          {route === "/safety" && <SafetyPage />}
+          {route === "/safety" && (
+            <Suspense fallback={<p className="hint page-loading">Loading…</p>}>
+              <SafetyPage />
+            </Suspense>
+          )}
           {route === "/credits" && <CreditsPage />}
         </ErrorBoundary>
       </Layout>

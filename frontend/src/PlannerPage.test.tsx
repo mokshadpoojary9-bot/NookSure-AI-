@@ -29,10 +29,11 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("routing", () => {
-  it("navigates between pages and marks the current link", () => {
+  it("navigates between pages and marks the current link", async () => {
     render(<App />);
     navigate("#/safety");
-    expect(screen.getByRole("heading", { level: 1, name: "Safety principles" })).toBeTruthy();
+    // The safety page is its own lazily loaded chunk.
+    expect(await screen.findByRole("heading", { level: 1, name: "Safety first, always" }, { timeout: 5000 })).toBeTruthy();
     expect(screen.getByRole("link", { name: "Safety" }).getAttribute("aria-current")).toBe("page");
     navigate("#/plan");
     expect(screen.getByRole("heading", { level: 1, name: "Home planner" })).toBeTruthy();
