@@ -35,7 +35,7 @@ NookSure AI asks about the actual home, the mobility need, the furniture already
 3. **Remove:** take away trip hazards such as loose rugs, clutter and cables.
 4. **Purchase:** only then, purpose-built products installed by a professional.
 
-It never suggests
+It never suggests improvised ramps or load-bearing fixes, and it never claims a home is certified safe.
 
 ---
 
