@@ -6,7 +6,8 @@
   "workspaces": [
     "shared",
     "backend",
-    "frontend"
+    "frontend",
+    "mcp-server"
   ],
   "scripts": {
     "dev:backend": "npm run dev -w backend",
