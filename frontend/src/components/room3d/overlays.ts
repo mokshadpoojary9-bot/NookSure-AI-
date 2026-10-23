@@ -8,8 +8,6 @@ import { DOOR, GARDEN_PATH, GARDEN_STEPS_DEPTH, ROOM_D, ROOM_W, type Box, type R
 
 export const TURNING_DIAMETER = 1.5;
 export const PATH_WIDTH = 0.9;
-/** Height of the shower cabin's tray, where its non-slip zone is drawn. */
-const SHOWER_FLOOR_Y = 0.13;
 
 export interface WallZone {
   key: string;
@@ -91,9 +89,10 @@ export function computeOverlays(scene: RoomScene): Overlays {
   if (types.includes("bathroom")) {
     if (has("toilet") || has("squat-pan")) grabZones.push({ key: "grab-toilet", position: [ROOM_W / 2 - 0.03, 0.95, -1.9], size: [0.04, 0.6, 0.9], label });
     if (has("shower")) {
-      // Inside the shower cabin (back-left corner): its back wall and its floor.
+      // Grab bar zone inside the shower cabin (back-left corner), on its back wall; the
+      // non-slip zone is in front of the cabin door, where people step out wet.
       grabZones.push({ key: "grab-shower", position: [-2.3, 1.1, -ROOM_D / 2 + 0.07], size: [0.8, 0.6, 0.04], label });
-      nonSlipZones.push({ key: "non-slip-shower", position: [-2.3, SHOWER_FLOOR_Y, -1.95], size: [1.0, 0.01, 0.8], label: "Non-slip zone: shower floor" });
+      nonSlipZones.push({ key: "non-slip-shower", position: [-2.3, 0.01, -1.15], size: [1.0, 0.01, 0.5], label: "Non-slip zone: in front of the shower" });
     }
     if (has("bathtub")) {
       grabZones.push({ key: "grab-bath", position: [ROOM_W / 2 - 0.03, 0.85, 0.9], size: [0.04, 0.5, 1.0], label });

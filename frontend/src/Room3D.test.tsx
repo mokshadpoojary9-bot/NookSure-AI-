@@ -184,7 +184,7 @@ describe("3D room view — accessibility overlays", () => {
     const check = screen.getByRole("list", { name: "Accessibility check" });
     expect(check.textContent).toMatch(/turning space/);
     expect(check.textContent).toMatch(/2 grab bar \/ handrail zone\(s\) — to be installed by a professional/);
-    expect(check.textContent).toMatch(/Non-slip zones: shower floor, in front of the basin/);
+    expect(check.textContent).toMatch(/Non-slip zones: in front of the shower, in front of the basin/);
   });
 });
 
