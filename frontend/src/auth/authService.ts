@@ -16,9 +16,15 @@ export interface AuthService {
   signOut(): Promise<void>;
 }
 
+/** The Firebase error code (e.g. "auth/invalid-api-key"), or "unknown". Codes never contain secrets. */
+export function authErrorCode(err: unknown): string {
+  const code = (err as { code?: unknown })?.code;
+  return typeof code === "string" && code ? code : "unknown";
+}
+
 /** Turns a Firebase error code into a message safe and useful to show users. */
 export function describeAuthError(err: unknown): string | null {
-  const code = (err as { code?: string })?.code ?? "";
+  const code = authErrorCode(err);
   switch (code) {
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
@@ -30,7 +36,8 @@ export function describeAuthError(err: unknown): string | null {
     case "auth/network-request-failed":
       return "Couldn't reach Google sign-in. Check your connection and try again.";
     default:
-      return "Sign-in didn't work. Please try again.";
+      // Include the code so a failure on the live site can be diagnosed from a screenshot.
+      return `Sign-in didn't work (${code}). Please try again.`;
   }
 }
 

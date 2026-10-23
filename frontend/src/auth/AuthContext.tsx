@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { describeAuthError, firebaseAuthService, type AuthService, type AuthUser } from "./authService";
+import { authErrorCode, describeAuthError, firebaseAuthService, type AuthService, type AuthUser } from "./authService";
 
 export type AuthStatus = "disabled" | "loading" | "signed-out" | "signing-in" | "signed-in";
 
@@ -33,6 +33,8 @@ export function AuthProvider({ children, service = firebaseAuthService }: { chil
       await service.signInWithGoogle();
       // onChange moves us to "signed-in"; on redirect the page navigates away.
     } catch (err) {
+      // The code and Firebase's own message; neither contains the config values.
+      console.error("Google sign-in failed:", authErrorCode(err), (err as { message?: string })?.message ?? "");
       setError(describeAuthError(err));
       setStatus("signed-out");
     }
