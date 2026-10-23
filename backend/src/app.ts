@@ -1,12 +1,16 @@
 import cors from "cors";
 import express, { type ErrorRequestHandler } from "express";
 import type { HealthResponse } from "@nooksure/shared";
+import { handleMcpHttp } from "@nooksure/mcp-server/http";
 import { createProvider } from "./ai";
 import type { AiProvider } from "./ai/provider";
 import type { AppConfig } from "./config";
-import { corsOptions } from "./cors";
+import { corsOptions, createOriginCheck } from "./cors";
 import { rateLimit } from "./rateLimit";
 import { chatRouter } from "./routes/chat";
+
+/** Per IP. The MCP tools use no paid API, so this only guards against floods. */
+const MCP_RATE_LIMIT_PER_MINUTE = 60;
 
 export interface AppDeps {
   provider?: AiProvider;
@@ -36,6 +40,13 @@ export function createApp(config: AppConfig, deps: AppDeps = {}) {
     rateLimit({ limit: config.CHAT_RATE_LIMIT_PER_MINUTE, windowMs: 60_000 }),
     chatRouter(provider),
   );
+
+  // MCP endpoint (Streamable HTTP) with the NookSure planning tools, for agents such as
+  // Alexa+. Public: the tools are read-only, rule-based and the same for every user.
+  const isAllowedOrigin = createOriginCheck(config);
+  app.all("/mcp", rateLimit({ limit: MCP_RATE_LIMIT_PER_MINUTE, windowMs: 60_000 }), (req, res) => {
+    void handleMcpHttp(req, res, req.body, { isAllowedOrigin });
+  });
 
   // Malformed or oversized JSON bodies → clean 4xx without echoing input.
   const onError: ErrorRequestHandler = (err, _req, res, _next) => {

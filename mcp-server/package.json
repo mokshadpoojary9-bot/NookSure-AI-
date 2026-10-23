@@ -2,8 +2,11 @@
   "name": "@nooksure/mcp-server",
   "version": "0.1.0",
   "private": true,
-  "description": "NookSure AI home safety planner as an MCP server (stdio).",
+  "description": "NookSure AI home safety planner as an MCP server (stdio and Streamable HTTP).",
   "type": "module",
+  "exports": {
+    "./http": "./src/http.ts"
+  },
   "bin": {
     "nooksure-mcp": "./dist/index.js"
   },
@@ -11,7 +14,8 @@
     "start": "tsx src/index.ts",
     "build": "esbuild src/index.ts --bundle --platform=node --format=esm --target=node20 --outfile=dist/index.js --log-level=warning",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "start:http": "tsx src/index.ts --http"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "~1.32.1",

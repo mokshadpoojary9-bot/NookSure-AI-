@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@google/genai": "~2.24.0",
+    "@nooksure/mcp-server": "*",
     "@nooksure/shared": "*",
     "cors": "^2.8.5",
     "express": "^4.21.2",
