@@ -21,6 +21,11 @@ describe("VITE_API_BASE_URL", () => {
     expect(await baseUrlWith("https://YOUR_RENDER_URL.onrender.com/")).toBe("https://YOUR_RENDER_URL.onrender.com");
   });
 
+  it("ignores stray spaces and line breaks around the URL", async () => {
+    expect(await baseUrlWith(" https://backend.example.com/\n")).toBe("https://backend.example.com");
+    expect(await baseUrlWith("\n")).toBe("http://localhost:3001");
+  });
+
   it("sends chat requests to <base>/api/chat", async () => {
     vi.stubEnv("VITE_API_BASE_URL", "https://backend.example.com");
     vi.resetModules();

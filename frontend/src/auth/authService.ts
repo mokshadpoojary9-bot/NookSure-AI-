@@ -16,10 +16,15 @@ export interface AuthService {
   signOut(): Promise<void>;
 }
 
-/** The Firebase error code (e.g. "auth/invalid-api-key"), or "unknown". Codes never contain secrets. */
+/**
+ * The Firebase error code (e.g. "auth/invalid-api-key"); for an error without one, its type
+ * (e.g. "TypeError"); otherwise "unknown". Neither contains secrets.
+ */
 export function authErrorCode(err: unknown): string {
   const code = (err as { code?: unknown })?.code;
-  return typeof code === "string" && code ? code : "unknown";
+  if (typeof code === "string" && code) return code;
+  if (err instanceof Error && err.name && err.name !== "Error") return err.name;
+  return "unknown";
 }
 
 /** Turns a Firebase error code into a message safe and useful to show users. */

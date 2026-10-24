@@ -1,6 +1,6 @@
 import { ApiErrorSchema, CHAT_LIMITS, ChatResponseSchema, type ChatMessage, type ChatResponse } from "@nooksure/shared";
 
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:3001").replace(/\/$/, "");
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL?.trim() || "http://localhost:3001").replace(/\/$/, "");
 
 export const OFFLINE_MESSAGE = "Assistant is offline, please try again.";
 

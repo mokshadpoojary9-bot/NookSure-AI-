@@ -9,14 +9,19 @@ import type { Firestore } from "firebase/firestore";
  */
 const env = import.meta.env;
 
+/** Trims stray spaces/line breaks (easy to paste into a hosting dashboard), which break sign-in. */
+const clean = (value: string | undefined) => value?.trim() || undefined;
+
+const measurementId = clean(env.VITE_FIREBASE_MEASUREMENT_ID);
+
 export const firebaseConfig: FirebaseOptions = {
-  apiKey: env.VITE_FIREBASE_API_KEY,
-  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: env.VITE_FIREBASE_APP_ID,
-  ...(env.VITE_FIREBASE_MEASUREMENT_ID ? { measurementId: env.VITE_FIREBASE_MEASUREMENT_ID } : {}),
+  apiKey: clean(env.VITE_FIREBASE_API_KEY),
+  authDomain: clean(env.VITE_FIREBASE_AUTH_DOMAIN),
+  projectId: clean(env.VITE_FIREBASE_PROJECT_ID),
+  storageBucket: clean(env.VITE_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: clean(env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+  appId: clean(env.VITE_FIREBASE_APP_ID),
+  ...(measurementId ? { measurementId } : {}),
 };
 
 export const isFirebaseConfigured = Boolean(

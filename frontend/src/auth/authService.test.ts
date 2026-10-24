@@ -17,4 +17,8 @@ describe("sign-in error messages", () => {
     expect(authErrorCode({ code: 42 })).toBe("unknown");
     expect(authErrorCode(null)).toBe("unknown");
   });
+
+  it("names the error type when there is no Firebase code", () => {
+    expect(authErrorCode(new TypeError("Failed to fetch"))).toBe("TypeError");
+  });
 });
